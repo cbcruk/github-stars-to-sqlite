@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Star Index — cbcruk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Flexoki — inky dark */
+  --bg:#100F0F; --bg2:#1C1B1A; --ui:#262524; --ui2:#343331;
+  --tx:#CECDC3; --tx2:#878580; --tx3:#575653;
+  --paper:#FFFCF0;
+  --red:#D14D41; --orange:#DA702C; --yellow:#D0A215; --green:#879A39;
+  --cyan:#3AA99F; --blue:#4385BE; --purple:#8B7EC8; --magenta:#CE5D97;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'IBM Plex Sans KR','IBM Plex Mono',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--mono);
+  -webkit-font-smoothing:antialiased;font-feature-settings:"ss01";}
+body{padding:0;line-height:1.5}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--yellow);color:var(--bg)}
+
+.wrap{max-width:1240px;margin:0 auto;padding:0 24px 96px}
+
+/* ── Header ─────────────────────────────── */
+header{padding:44px 0 22px;border-bottom:1px solid var(--ui)}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--tx3);font-weight:600}
+h1{font-size:clamp(30px,5vw,52px);line-height:1;margin:0;font-weight:700;letter-spacing:-.02em}
+h1 .star{color:var(--yellow)}
+h1 .who{color:var(--tx2);font-weight:400}
+.sub{color:var(--tx2);font-size:13px;margin-top:2px}
+.sub b{color:var(--tx);font-weight:600}
+.count-big{font-size:clamp(40px,8vw,72px);line-height:.85;font-weight:700;color:var(--paper);letter-spacing:-.03em}
+.count-big small{display:block;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--tx3);font-weight:600;margin-top:8px;text-align:right}
+
+/* ── Spectrum (signature) ───────────────── */
+.spectrum-block{padding:26px 0 8px}
+.spectrum-cap{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+.spectrum-cap .lbl{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--tx3);font-weight:600}
+.spectrum-cap .hint{font-size:11px;color:var(--tx3)}
+.spectrum{display:flex;width:100%;height:26px;border-radius:3px;overflow:hidden;background:var(--bg2);
+  border:1px solid var(--ui)}
+.seg{height:100%;cursor:pointer;position:relative;transition:opacity .18s ease, flex-basis .6s cubic-bezier(.2,.7,.2,1);
+  min-width:2px;opacity:.82}
+.seg:hover{opacity:1}
+.seg.dim{opacity:.24}
+.seg.active{opacity:1;box-shadow:inset 0 0 0 2px var(--paper)}
+.tip{position:fixed;pointer-events:none;background:var(--paper);color:var(--bg);
+  font-size:12px;font-weight:600;padding:5px 9px;border-radius:4px;z-index:50;white-space:nowrap;
+  transform:translate(-50%,-140%);opacity:0;transition:opacity .1s}
+.tip.on{opacity:1}
+.tip .c{color:var(--tx3);font-weight:500}
+
+/* ── Controls ───────────────────────────── */
+.controls{position:sticky;top:0;z-index:20;background:linear-gradient(var(--bg) 72%,transparent);
+  padding:16px 0 14px;margin-top:6px}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.search{flex:1 1 260px;display:flex;align-items:center;gap:9px;background:var(--bg2);
+  border:1px solid var(--ui2);border-radius:6px;padding:0 12px;height:40px}
+.search:focus-within{border-color:var(--tx3)}
+.search svg{width:15px;height:15px;stroke:var(--tx3);flex:none}
+.search input{flex:1;background:none;border:0;color:var(--tx);font-family:var(--mono);font-size:14px;outline:none}
+.search input::placeholder{color:var(--tx3)}
+.sel{position:relative}
+select{appearance:none;background:var(--bg2);border:1px solid var(--ui2);color:var(--tx);
+  font-family:var(--mono);font-size:13px;height:40px;padding:0 34px 0 13px;border-radius:6px;cursor:pointer;outline:none}
+select:hover{border-color:var(--tx3)}
+.sel::after{content:"▾";position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--tx3);pointer-events:none;font-size:12px}
+.shown{font-size:12px;color:var(--tx2);white-space:nowrap;padding-left:2px}
+.shown b{color:var(--paper)}
+.clear{background:none;border:1px solid var(--ui2);color:var(--tx2);font-family:var(--mono);
+  font-size:12px;height:40px;padding:0 13px;border-radius:6px;cursor:pointer}
+.clear:hover{border-color:var(--red);color:var(--red)}
+.clear[hidden]{display:none}
+
+/* ── Category chips ─────────────────────── */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 4px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid var(--ui);
+  border-radius:20px;padding:5px 12px 5px 10px;font-size:12.5px;color:var(--tx2);cursor:pointer;
+  transition:border-color .15s,color .15s,background .15s;user-select:none}
+.chip:hover{color:var(--tx);border-color:var(--ui2)}
+.chip .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.chip .n{color:var(--tx3);font-size:11px;font-weight:600}
+.chip.active{background:var(--ui);color:var(--paper);border-color:transparent}
+.chip.active .n{color:var(--tx)}
+.chip.dim{opacity:.4}
+
+/* ── Cards ──────────────────────────────── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));gap:12px;margin-top:20px}
+.card{background:var(--bg2);border:1px solid var(--ui);border-radius:8px;padding:15px 16px 13px;
+  display:flex;flex-direction:column;gap:9px;position:relative;overflow:hidden;
+  transition:border-color .15s,transform .15s,background .15s}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,var(--tx3));opacity:.9}
+.card:hover{border-color:var(--ui2);background:#211F1E;transform:translateY(-2px)}
+.card .top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.repo{font-size:14.5px;font-weight:600;line-height:1.25;word-break:break-word}
+.repo .owner{color:var(--tx3);font-weight:400}
+.repo .name{color:var(--paper)}
+.card:hover .repo .name{color:var(--yellow)}
+.stars{font-size:11px;color:var(--tx3);white-space:nowrap;font-weight:600;flex:none;padding-top:2px}
+.desc{font-family:var(--sans);font-size:12.5px;line-height:1.5;color:var(--tx2);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:1px}
+.desc:empty::after{content:"— no description";color:var(--tx3);font-style:italic}
+.meta{display:flex;align-items:center;gap:12px;margin-top:auto;flex-wrap:wrap}
+.lang{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--tx2)}
+.lang .ld{width:9px;height:9px;border-radius:50%;background:var(--tx3)}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:10.5px;color:var(--tx3);cursor:pointer;padding:1px 0;border-bottom:1px dotted transparent}
+.tag:hover{color:var(--tx);border-bottom-color:var(--tx3)}
+
+/* ── Empty ──────────────────────────────── */
+.empty{text-align:center;padding:80px 20px;color:var(--tx2)}
+.empty h3{color:var(--tx);font-size:16px;margin:0 0 8px;font-weight:600}
+.empty button{margin-top:16px;background:var(--yellow);color:var(--bg);border:0;font-family:var(--mono);
+  font-weight:600;font-size:13px;padding:9px 16px;border-radius:6px;cursor:pointer}
+
+/* ── Footer note ────────────────────────── */
+footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--ui);color:var(--tx3);font-size:11.5px;line-height:1.7}
+footer b{color:var(--tx2);font-weight:600}
+footer a{color:var(--blue);border-bottom:1px solid transparent}
+footer a:hover{border-bottom-color:var(--blue)}
+
+@media(max-width:560px){
+  .wrap{padding:0 16px 72px}
+  .masthead{align-items:flex-start}
+  .count-big small{text-align:left}
+  .grid{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  *{transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="masthead">
+      <div class="brand">
+        <span class="eyebrow">Star Index · GitHub Catalog</span>
+        <h1><span class="star">★</span> Stellar Archive <span class="who">/ cbcruk</span></h1>
+        <p class="sub"><b id="statTotal">0</b> repositories, sorted into <b id="statCats">0</b> domains across <b id="statLangs">0</b> languages</p>
+      </div>
+      <div class="count-big"><span id="statTotal2">0</span><small>starred</small></div>
+    </div>
+
+    <div class="spectrum-block">
+      <div class="spectrum-cap">
+        <span class="lbl">Distribution — the shape of the collection</span>
+        <span class="hint">클릭해서 도메인으로 걸러보기 →</span>
+      </div>
+      <div class="spectrum" id="spectrum"></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="bar">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="q" type="search" placeholder="이름 · 설명 · 저자로 검색…" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="sel"><select id="lang"></select></div>
+      <div class="sel"><select id="sort">
+        <option value="stars">★ 스타순</option>
+        <option value="recent">최근 star순</option>
+        <option value="name">이름순 (A–Z)</option>
+      </select></div>
+      <button class="clear" id="clear" hidden>초기화 ✕</button>
+      <span class="shown"><b id="shown">0</b> shown</span>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div id="results"></div>
+
+  <footer>
+    <p>분류는 저장소 이름·설명·토픽에 대한 <b>키워드 휴리스틱</b>으로 첫 번째로 매칭된 도메인을 대표 카테고리로 삼았습니다. 하나의 저장소는 여러 도메인에 속할 수 있고(카드의 <b>#태그</b>가 전체 소속), 판단의 여지가 있는 경계는 사람이 다시 봐야 합니다 — 도구는 좌표를 제시하고 판단은 남겨둡니다.</p>
+    <p style="margin-top:8px">데이터: <a href="https://github.com/cbcruk?tab=stars" target="_blank" rel="noopener">github.com/cbcruk?tab=stars</a> · 최근 star 1,000개 기준 · 팔레트 <a href="https://stephango.com/flexoki" target="_blank" rel="noopener">Flexoki</a></p>
+  </footer>
+
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const {cats, langs, repos, total} = DATA;
+const catById = Object.fromEntries(cats.map(c=>[c.id,c]));
+
+// language dot colors (github-ish, muted to fit)
+const LANGCOLOR = {
+  TypeScript:'#4385BE', JavaScript:'#D0A215', Rust:'#D14D41', Go:'#3AA99F', Python:'#879A39',
+  C:'#878580', 'C++':'#CE5D97', 'C#':'#8B7EC8', Swift:'#DA702C', Zig:'#DA702C', HTML:'#D14D41',
+  Vue:'#879A39', Svelte:'#D14D41', Shell:'#879A39', Java:'#DA702C', Lua:'#4385BE', Elixir:'#8B7EC8',
+  MDX:'#D0A215', CSS:'#8B7EC8', Clojure:'#879A39', Zig2:'#DA702C'
+};
+
+const state = { cat:null, lang:'', q:'', sort:'stars' };
+
+// ── stats ──
+const setText=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
+setText('statTotal', total.toLocaleString());
+setText('statTotal2', total.toLocaleString());
+setText('statCats', cats.length);
+setText('statLangs', langs.filter(l=>l.name!=='—').length);
+
+// ── spectrum ──
+const spectrum=document.getElementById('spectrum');
+const tip=document.getElementById('tip');
+cats.forEach(c=>{
+  const seg=document.createElement('div');
+  seg.className='seg'; seg.style.background=c.color;
+  seg.style.flex=`${c.count} 0 0`;
+  seg.dataset.id=c.id;
+  seg.addEventListener('mousemove',e=>{
+    tip.innerHTML=`${c.emoji} ${c.label.split(' · ')[0]} <span class="c">· ${c.count}</span>`;
+    tip.style.left=e.clientX+'px'; tip.style.top=e.clientY+'px'; tip.classList.add('on');
+  });
+  seg.addEventListener('mouseleave',()=>tip.classList.remove('on'));
+  seg.addEventListener('click',()=>toggleCat(c.id));
+  spectrum.appendChild(seg);
+});
+
+// ── language filter ──
+const langSel=document.getElementById('lang');
+langSel.innerHTML='<option value="">모든 언어</option>'+
+  langs.map(l=>`<option value="${l.name}">${l.name==='—'?'(기타/미표기)':l.name} · ${l.count}</option>`).join('');
+langSel.addEventListener('change',()=>{state.lang=langSel.value; render();});
+
+document.getElementById('sort').addEventListener('change',e=>{state.sort=e.target.value; render();});
+const qInput=document.getElementById('q');
+qInput.addEventListener('input',()=>{state.q=qInput.value.trim().toLowerCase(); render();});
+document.getElementById('clear').addEventListener('click',()=>{
+  state.cat=null; state.lang=''; state.q=''; qInput.value=''; langSel.value=''; render();
+});
+
+// ── chips ──
+const chipsEl=document.getElementById('chips');
+cats.forEach(c=>{
+  const chip=document.createElement('button');
+  chip.className='chip'; chip.dataset.id=c.id;
+  chip.innerHTML=`<span class="dot" style="background:${c.color}"></span>${c.emoji} ${c.label.split(' · ')[0]} <span class="n">${c.count}</span>`;
+  chip.addEventListener('click',()=>toggleCat(c.id));
+  chipsEl.appendChild(chip);
+});
+
+function toggleCat(id){ state.cat = state.cat===id ? null : id; render(); }
+
+// ── filtering ──
+function matches(r){
+  if(state.cat && !r.a.includes(state.cat)) return false;
+  if(state.lang){ const l=r.l||'—'; if(l!==state.lang) return false; }
+  if(state.q){
+    const hay=(r.o+'/'+r.n+' '+(r.d||'')).toLowerCase();
+    if(!hay.includes(state.q)) return false;
+  }
+  return true;
+}
+const sorters={
+  stars:(a,b)=>b.s-a.s,
+  name:(a,b)=>(a.o+'/'+a.n).toLowerCase().localeCompare((b.o+'/'+b.n).toLowerCase()),
+  recent:()=>0 // preserve original (recency) order
+};
+
+const results=document.getElementById('results');
+
+function render(){
+  // sync spectrum + chips visual state
+  document.querySelectorAll('.seg').forEach(s=>{
+    s.classList.toggle('active', state.cat===s.dataset.id);
+    s.classList.toggle('dim', !!state.cat && state.cat!==s.dataset.id);
+  });
+  document.querySelectorAll('.chip').forEach(ch=>{
+    ch.classList.toggle('active', state.cat===ch.dataset.id);
+    ch.classList.toggle('dim', !!state.cat && state.cat!==ch.dataset.id);
+  });
+  const active = state.cat||state.lang||state.q;
+  document.getElementById('clear').hidden = !active;
+
+  let list = repos.filter(matches);
+  if(state.sort!=='recent') list = list.slice().sort(sorters[state.sort]);
+  setText('shown', list.length.toLocaleString());
+
+  if(!list.length){
+    results.innerHTML=`<div class="empty"><h3>조건에 맞는 저장소가 없어요</h3>
+      <p>검색어나 필터를 넓혀보세요.</p>
+      <button onclick="document.getElementById('clear').click()">필터 초기화</button></div>`;
+    return;
+  }
+
+  const frag=document.createDocumentFragment();
+  const grid=document.createElement('div'); grid.className='grid';
+  for(const r of list){
+    const c=catById[r.c]||{color:'var(--tx3)'};
+    const card=document.createElement('article'); card.className='card';
+    card.style.setProperty('--accent',c.color);
+    const langColor=LANGCOLOR[r.l]||'#575653';
+    const tags = r.a.map(id=>{
+      const cc=catById[id]; if(!cc) return '';
+      return `<span class="tag" data-id="${id}">#${cc.label.split(' · ')[0]}</span>`;
+    }).join('');
+    const starTxt = r.s>=1000 ? (r.s/1000).toFixed(r.s>=10000?0:1)+'k' : r.s;
+    card.innerHTML=`
+      <div class="top">
+        <a class="repo" href="${r.u}" target="_blank" rel="noopener"><span class="owner">${esc(r.o)}/</span><span class="name">${esc(r.n)}</span></a>
+        <span class="stars">★ ${starTxt}</span>
+      </div>
+      <p class="desc">${esc(r.d||'')}</p>
+      <div class="meta">
+        ${r.l?`<span class="lang"><span class="ld" style="background:${langColor}"></span>${esc(r.l)}</span>`:''}
+        <span class="tags">${tags}</span>
+      </div>`;
+    grid.appendChild(card);
+  }
+  frag.appendChild(grid);
+  results.innerHTML=''; results.appendChild(frag);
+
+  results.querySelectorAll('.tag').forEach(t=>{
+    t.addEventListener('click',()=>toggleCat(t.dataset.id));
+  });
+}
+
+function esc(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+node_modules/
+
+# 생성물
+*.db
+*.db-wal
+*.db-shm
+fixture.json
+
+# 토큰이 섞일 수 있는 API 덤프
+*.raw.json
