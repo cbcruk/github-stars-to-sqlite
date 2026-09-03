@@ -1,0 +1,9 @@
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+
+# 루트에서 복사해오는 사본. 원본은 저장소 루트에 커밋되어 있다.
+stars.db
+stars.db-wal
+stars.db-shm
