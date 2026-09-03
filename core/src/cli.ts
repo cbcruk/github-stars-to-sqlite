@@ -1,4 +1,5 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
+import { readFileSync } from 'node:fs'
 import { openDb } from './db.ts'
 import { fetchPages, resolveToken, type StarItem } from './github.ts'
 import { beginSync, finishSync, ingestPage, latestStarredAt, type SyncMode } from './ingest.ts'
@@ -26,7 +27,7 @@ let complete = false
 
 try {
   if (fromFile) {
-    const items = (await Bun.file(fromFile).json()) as StarItem[]
+    const items = JSON.parse(readFileSync(fromFile, 'utf8')) as StarItem[]
     const r = ingestPage(db, syncId, items)
     total.seen += r.seen
     total.added += r.added
@@ -67,9 +68,9 @@ try {
 }
 
 const { gone } = finishSync(db, syncId, complete)
-const live = db
-  .prepare<{ n: number }, []>('SELECT count(*) AS n FROM star WHERE unstarred_sync IS NULL')
-  .get()!.n
+const live = (
+  db.prepare('SELECT count(*) AS n FROM star WHERE unstarred_sync IS NULL').get() as { n: number }
+).n
 db.close()
 
 console.log(

@@ -1,3 +1,4 @@
+import { writeFileSync } from 'node:fs'
 // 네트워크 없이 파이프라인을 확인하기 위한 합성 별표 목록.
 // 실제 응답과 같은 모양이어야 normalize 가 지우는 URL 템플릿까지 검증된다.
 //
@@ -94,7 +95,7 @@ const stars = REPOS.map((r, i) => {
   return { starred_at: new Date(t0 + i * 86400_000).toISOString(), repo }
 })
 
-await Bun.write('fixture.json', JSON.stringify(stars, null, 2))
+writeFileSync('fixture.json', JSON.stringify(stars, null, 2))
 console.log(`fixture.json 생성 (repo ${stars.length})`)
 
 export {}

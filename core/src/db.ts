@@ -1,6 +1,6 @@
-import { Database } from 'bun:sqlite'
+import { DatabaseSync } from 'node:sqlite'
 
-const SCHEMA = `
+export const SCHEMA = `
 -- 동기화 1회 = row 하나. ok=1 인 full 동기화만 언스타 판정의 근거가 된다.
 CREATE TABLE IF NOT EXISTS sync (
   id          INTEGER PRIMARY KEY,
@@ -34,12 +34,41 @@ CREATE INDEX IF NOT EXISTS star_full_name  ON star(full_name);
 CREATE INDEX IF NOT EXISTS star_live       ON star(last_sync) WHERE unstarred_sync IS NULL;
 `
 
-export function openDb(path: string): Database {
-  const db = new Database(path, { create: true })
-  // bun:sqlite 에는 better-sqlite3 의 .pragma() 헬퍼가 없다. exec 로 직접 건다.
+export type OpenOpts = { readonly?: boolean }
+
+/**
+ * 쓰기(적재)와 읽기(web) 양쪽이 이 함수 하나로 연다.
+ *
+ * 읽기 전용은 `immutable=1` URI 로 연다. Vercel 함수처럼 읽기 전용 파일시스템
+ * 에서 SQLite 가 -shm/-wal 을 만들려다 실패하는 걸 막는 유일한 방법이다.
+ * 대신 이 모드는 -wal 을 읽지 않으므로, 적재 후 wal_checkpoint 로 접어 두는
+ * 것이 정확성 조건이다.
+ */
+export function openDb(path: string, opts: OpenOpts = {}): DatabaseSync {
+  if (opts.readonly) {
+    return new DatabaseSync(`file:${path}?immutable=1`, { readOnly: true })
+  }
+  // node:sqlite 에는 better-sqlite3 의 .pragma() 헬퍼가 없다. exec 로 직접 건다.
+  const db = new DatabaseSync(path)
   db.exec('PRAGMA journal_mode = WAL')
   db.exec('PRAGMA synchronous = NORMAL')
   db.exec('PRAGMA foreign_keys = ON')
   db.exec(SCHEMA)
   return db
+}
+
+/**
+ * node:sqlite 에는 bun:sqlite / better-sqlite3 의 db.transaction() 헬퍼가
+ * 없다. BEGIN/COMMIT 을 직접 건다. 예외가 나면 ROLLBACK 하고 다시 던진다.
+ */
+export function tx<T>(db: DatabaseSync, fn: () => T): T {
+  db.exec('BEGIN')
+  try {
+    const r = fn()
+    db.exec('COMMIT')
+    return r
+  } catch (e) {
+    db.exec('ROLLBACK')
+    throw e
+  }
 }

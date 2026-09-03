@@ -1,0 +1,17 @@
+{
+  "name": "@stars/core",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": { "github-stars-to-sqlite": "./src/cli.ts" },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "sync": "node src/cli.ts ../stars.db",
+    "fixture": "node make-fixture.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}

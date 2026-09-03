@@ -1,5 +1,5 @@
 {
-  "name": "github-stars-demo",
+  "name": "@stars/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,6 +10,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@stars/core": "*",
     "next": "15.5.25",
     "react": "19.1.1",
     "react-dom": "19.1.1"

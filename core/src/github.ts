@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process'
+
 const API = 'https://api.github.com/user/starred'
 
 export type StarItem = { starred_at: string; repo: Record<string, unknown> }
@@ -10,8 +12,12 @@ export function resolveToken(): string {
   const env = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN
   if (env) return env
 
-  const p = Bun.spawnSync(['gh', 'auth', 'token'], { stderr: 'pipe' })
-  const token = p.success ? p.stdout.toString().trim() : ''
+  let token = ''
+  try {
+    token = execFileSync('gh', ['auth', 'token'], { encoding: 'utf8' }).trim()
+  } catch {
+    // gh 미설치/미로그인. 아래에서 던진다.
+  }
   if (token) return token
 
   throw new Error('토큰 없음: GITHUB_TOKEN 을 설정하거나 gh auth login 을 실행한다')

@@ -1,15 +1,22 @@
 # github-stars-to-sqlite
 
-GitHub 에 눌러둔 별표를 SQLite 하나에 적재한다. 적재까지가 이 저장소의 책임이고, 분석은 만들어진 `.db` 를 입력으로 받는 쪽에서 한다. [fit-to-sqlite](https://github.com/cbcruk/fit-to-sqlite) 와 같은 구조다.
+GitHub 에 눌러둔 별표를 SQLite 하나에 적재하고, 그 위에서 검색한다. 적재와 조회를 분리해 [fit-to-sqlite](https://github.com/cbcruk/fit-to-sqlite) 의 "적재는 이 저장소 책임, 분석은 `.db` 받는 쪽" 원칙을 두 패키지로 나눴다.
 
-```bash
-bun install
-bun src/cli.ts stars.db --full     # 전체 동기화
-bun src/cli.ts stars.db            # 이후에는 증분
-sqlite3 stars.db < sql/views.sql
+```
+github-stars-to-sqlite/     # npm workspaces
+├─ core/     CLI + 적재 — GitHub → stars.db. react 의존 없음
+├─ web/      Next 앱 — stars.db 를 RSC 에서 직접 읽는 검색 뷰
+└─ stars.db  캐넌컬 스냅샷 (커밋됨). core 가 쓰고, web 이 읽는다
 ```
 
-런타임은 Bun 이다. `.ts` 를 그대로 실행하므로 빌드 단계가 없고, SQLite 는 내장 `bun:sqlite`, HTTP 는 내장 `fetch` 를 쓴다 — 런타임 의존성이 없다.
+```bash
+npm install                          # 워크스페이스 전체
+npm run sync -w @stars/core -- --full # 전체 동기화 (core/../stars.db)
+npm run sync -w @stars/core          # 이후에는 증분
+npm run dev  -w @stars/web            # 검색 앱 (http://localhost:3000)
+```
+
+런타임은 Node 24 다. 타입 스트리핑으로 `.ts` 를 그대로 실행하므로 빌드 단계가 없고, SQLite 는 내장 `node:sqlite`, HTTP 는 내장 `fetch` 를 쓴다 — core 는 런타임 의존성이 없다. 예전엔 Bun 이었지만, Node 24 가 `.ts` 직접 실행과 내장 SQLite 를 둘 다 갖추면서 web(Node/Vercel)과 런타임·바인딩을 통일할 수 있게 돼 옮겼다.
 
 ## 저장소에 포함된 stars.db
 
@@ -19,10 +26,12 @@ sqlite3 stars.db < sql/views.sql
 갱신은 수동이다. 동기화한 뒤 WAL 을 접고 커밋한다.
 
 ```bash
-bun src/cli.ts stars.db
+npm run sync -w @stars/core
 sqlite3 stars.db 'PRAGMA wal_checkpoint(TRUNCATE); VACUUM;'
 git commit -am "stars 스냅샷 갱신"
 ```
+
+`sync` 스크립트는 루트의 `stars.db` 를 대상으로 돈다. web 은 이 파일을 빌드 때 자기 디렉터리로 복사해(`web/scripts/copy-db.mjs`) 번들에 넣으므로, 원본은 루트 하나뿐이다.
 
 `VACUUM` 은 선택이지만 매 커밋이 4.5MB 블롭을 새로 쌓으므로 넣어둔다.
 `-wal`/`-shm` 은 `.gitignore` 에 있다 — 접지 않고 커밋하면 마지막 동기화가
@@ -42,7 +51,7 @@ star(repo_id PK, full_name, starred_at, sha256, data JSON,
      first_sync, last_sync, unstarred_sync)
 ```
 
-repo 하나가 row 하나고, 본문은 GitHub 응답 필드명 그대로의 JSON 이다(`stargazers_count`, `pushed_at` … 스네이크로 온 걸 그대로 둔다). 어떤 필드를 컬럼으로 승격할지 미리 정하지 않는다. 질의를 몇 번 돌려서 실제 쓰는 필드가 드러난 다음 `sql/views.sql` 에 뷰로 굳히고, 그래도 느리면 생성 컬럼으로 승격한다. 셋 다 재적재가 필요 없다.
+repo 하나가 row 하나고, 본문은 GitHub 응답 필드명 그대로의 JSON 이다(`stargazers_count`, `pushed_at` … 스네이크로 온 걸 그대로 둔다). 어떤 필드를 컬럼으로 승격할지 미리 정하지 않는다. 질의를 몇 번 돌려서 실제 쓰는 필드가 드러난 다음 `core/sql/views.sql` 에 뷰로 굳히고, 그래도 느리면 생성 컬럼으로 승격한다. 셋 다 재적재가 필요 없다.
 
 ```sql
 ALTER TABLE star ADD COLUMN language TEXT
@@ -72,8 +81,8 @@ SELECT * FROM unstarred;  -- 뺀 별표 + 알아챈 시각
 ## 두 가지 동기화
 
 ```bash
-bun src/cli.ts stars.db --full   # 전체 24페이지. 언스타까지 판정
-bun src/cli.ts stars.db          # 새 별표만. 보통 1페이지
+npm run sync -w @stars/core -- --full   # 전체 24페이지. 언스타까지 판정
+npm run sync -w @stars/core             # 새 별표만. 보통 1페이지
 ```
 
 차이는 조회량이 아니라 **판정 범위**다. 증분은 목록의 앞부분만 보므로 `last_sync` 가 뒤처진 repo 가 있는 게 정상이다. 여기서 언스타를 판정하면 전부 오탐이 된다. 그래서 `finishSync` 는 목록 전체를 본 동기화에서만 판정한다.
@@ -97,7 +106,7 @@ DB 가 비어 있으면 `--full` 없이도 전체로 돈다. 증분은 비교할
 
 ## 정규화 범위
 
-`src/normalize.ts` 가 하는 일은 하나다. **`url` 또는 `*_url` 인 키를 재귀적으로 지운다.** 예외는 `mirror_url` 하나다.
+`core/src/normalize.ts` 가 하는 일은 하나다. **`url` 또는 `*_url` 인 키를 재귀적으로 지운다.** 예외는 `mirror_url` 하나다.
 
 응답 payload 의 3/4 가 `full_name` 과 `owner.id` 에서 기계적으로 복원되는 URL 템플릿이다. repo 당 40여 개가 이렇게 생겼다.
 
@@ -116,7 +125,7 @@ avatar_url = https://avatars.githubusercontent.com/u/{owner.id}?v=4
 *_url(API) = https://api.github.com/repos/{full_name}/...
 ```
 
-`homepage` 는 키 이름이 `_url` 로 끝나지 않아 규칙에 걸리지 않고, `mirror_url` 은 유일하게 복원 불가라 예외로 남긴다. `sql/views.sql` 의 `starred.url` 이 `'https://github.com/' || full_name` 으로 복원한다.
+`homepage` 는 키 이름이 `_url` 로 끝나지 않아 규칙에 걸리지 않고, `mirror_url` 은 유일하게 복원 불가라 예외로 남긴다. `core/sql/views.sql` 의 `starred.url` 이 `'https://github.com/' || full_name` 으로 복원한다.
 
 `starred_at` 만 ISO 8601 → unix epoch(초)로 바꿔 컬럼으로 뽑는다. 인덱스와 범위 질의를 위해서다. 나머지 시각(`pushed_at`, `created_at`)은 ISO 문자열 그대로 두고 뷰에서 `date()` 로 판다 — SQLite 가 `Z` 접미사를 그대로 읽는다.
 
@@ -146,7 +155,7 @@ stars.db      4.51MB (VACUUM 후)
 
 ## 예시 질의
 
-`sql/views.sql` 적용 후. 별표를 누른 해별로 언어 비중이 어떻게 움직였는지:
+`core/sql/views.sql` 적용 후. 별표를 누른 해별로 언어 비중이 어떻게 움직였는지:
 
 ```sql
 WITH y AS (SELECT strftime('%Y', starred_at) AS yr, language FROM starred WHERE language IS NOT NULL)
@@ -183,27 +192,40 @@ SELECT topic, count(*) n FROM topic GROUP BY 1 ORDER BY n DESC LIMIT 20;
 네트워크 없이 확인하려면 합성 목록을 만든다. `make-fixture.ts` 가 URL 템플릿까지 실제 응답과 같은 모양으로 repo 5개를 찍는다.
 
 ```bash
-bun make-fixture.ts
-bun src/cli.ts test.db --from fixture.json
+cd core
+node make-fixture.ts
+node src/cli.ts test.db --from fixture.json
 ```
 
 `--from` 은 파일이 목록 전체라고 보고 전체 동기화로 취급하므로, 항목을 지운 파일로 다시 돌리면 언스타 판정까지 확인된다.
 
 ```bash
 jq '.[0:3]' fixture.json > less.json
-bun src/cli.ts test.db --from less.json   # 언스타 2
-bun src/cli.ts test.db --from fixture.json # 신규 2 (재스타), first_sync 는 보존
+node src/cli.ts test.db --from less.json    # 언스타 2
+node src/cli.ts test.db --from fixture.json # 신규 2 (재스타), first_sync 는 보존
 ```
 
-## bun:sqlite 주의
+## web — RSC 로 stars.db 직접 읽기
 
-`better-sqlite3` 에서 옮겨올 때 걸리는 곳이 둘 있다.
+`web/` 는 Next 앱이고, 커밋된 `stars.db` 를 RSC 에서 `node:sqlite` 로 직접 질의한다. Turso 같은 원격도, 정적 JSON 주입도 없다 — 파일을 그대로 읽는다. 상태는 URL(`?q &lang &sort`)이 갖고, 클라이언트 컴포넌트는 `router.replace` 로 URL 만 갱신한다.
 
-`.pragma()` 헬퍼가 없다. `db.exec('PRAGMA journal_mode = WAL')` 로 직접 건다. `prepare` 의 제네릭 순서도 반대다 — better-sqlite3 는 `<Params, Result>`, bun 은 `<Result, Params>` 다.
+읽기 열기 로직(`immutable=1` 읽기 전용)은 core 의 `openDb(path, { readonly: true })` 하나이고, web 은 그걸 import 해 경로만 준다. `web/lib/db.ts` 가 모듈 스코프 싱글턴으로 감싸 웜 인보케이션에서 재사용한다.
+
+배포 대상은 Vercel 이다. 함수 번들에 `stars.db` 를 넣기 위해 `next.config.ts` 가 `outputFileTracingIncludes` 로 명시하고(import 되지 않는 바이너리라 트레이싱이 자동으로 잡지 못한다), `transpilePackages: ['@stars/core']` 로 core 의 `.ts` 를 Next 가 컴파일하게 한다. 트레이싱 루트는 모노레포 루트로 둔다 — next 와 core 가 루트 `node_modules` 로 호이스팅되기 때문이다.
+
+이 경로는 [cbcruk/omoji](https://github.com/cbcruk/omoji) 가 한 번 좌초해 Turso 로 우회했던 길이다. 차이는 바인딩 하나다: omoji 는 `better-sqlite3`(네이티브)였고, 여기는 `node:sqlite`(무바인딩, Node 24 stable)를 쓴다. 네이티브 컴파일이 없어 환경을 타지 않는다.
+
+## node:sqlite 주의
+
+`bun:sqlite`/`better-sqlite3` 에서 옮겨올 때 걸리는 곳이 셋 있다.
+
+`db.transaction()` 헬퍼가 없다. `BEGIN`/`COMMIT`/`ROLLBACK` 을 직접 건다(`core/src/db.ts` 의 `tx()`). `prepare` 는 제네릭 타입을 받지 않으므로 결과는 캐스팅한다.
 
 ```ts
-db.prepare<{ sha256: string }, [number]>('SELECT sha256 FROM star WHERE repo_id = ?')
+const prev = find.get(repoId) as PrevRow | undefined
 ```
+
+그리고 `.all()`/`.get()` 은 **null-prototype 객체**를 돌려준다. RSC 에서 이 값을 클라이언트 컴포넌트로 넘기면 직렬화가 막히므로, 넘기기 전에 `.map(r => ({ ...r }))` 로 평범한 객체로 바꾼다. SQL 문자열 리터럴은 홑따옴표로 — `node:sqlite` 는 큰따옴표를 컬럼명으로 해석한다.
 
 ## 범위에 대한 미결
 
