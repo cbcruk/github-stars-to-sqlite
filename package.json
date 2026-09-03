@@ -3,10 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "workspaces": ["core", "web"],
   "scripts": {
-    "sync": "npm run sync -w @stars/core",
-    "dev": "npm run dev -w @stars/web",
-    "build": "npm run build -w @stars/web"
+    "sync": "pnpm --filter @stars/core sync",
+    "dev": "pnpm --filter @stars/web dev",
+    "build": "pnpm --filter @stars/web build"
   }
 }

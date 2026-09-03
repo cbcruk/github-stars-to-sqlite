@@ -3,17 +3,17 @@
 GitHub 에 눌러둔 별표를 SQLite 하나에 적재하고, 그 위에서 검색한다. 적재와 조회를 분리해 [fit-to-sqlite](https://github.com/cbcruk/fit-to-sqlite) 의 "적재는 이 저장소 책임, 분석은 `.db` 받는 쪽" 원칙을 두 패키지로 나눴다.
 
 ```
-github-stars-to-sqlite/     # npm workspaces
+github-stars-to-sqlite/     # pnpm workspaces
 ├─ core/     CLI + 적재 — GitHub → stars.db. react 의존 없음
 ├─ web/      Next 앱 — stars.db 를 RSC 에서 직접 읽는 검색 뷰
 └─ stars.db  캐넌컬 스냅샷 (커밋됨). core 가 쓰고, web 이 읽는다
 ```
 
 ```bash
-npm install                          # 워크스페이스 전체
-npm run sync -w @stars/core -- --full # 전체 동기화 (core/../stars.db)
-npm run sync -w @stars/core          # 이후에는 증분
-npm run dev  -w @stars/web            # 검색 앱 (http://localhost:3000)
+pnpm install                            # 워크스페이스 전체
+pnpm --filter @stars/core sync --full   # 전체 동기화 (루트 stars.db)
+pnpm --filter @stars/core sync          # 이후에는 증분
+pnpm --filter @stars/web dev            # 검색 앱 (http://localhost:3000)
 ```
 
 런타임은 Node 24 다. 타입 스트리핑으로 `.ts` 를 그대로 실행하므로 빌드 단계가 없고, SQLite 는 내장 `node:sqlite`, HTTP 는 내장 `fetch` 를 쓴다 — core 는 런타임 의존성이 없다. 예전엔 Bun 이었지만, Node 24 가 `.ts` 직접 실행과 내장 SQLite 를 둘 다 갖추면서 web(Node/Vercel)과 런타임·바인딩을 통일할 수 있게 돼 옮겼다.
@@ -26,7 +26,7 @@ npm run dev  -w @stars/web            # 검색 앱 (http://localhost:3000)
 갱신은 수동이다. 동기화한 뒤 WAL 을 접고 커밋한다.
 
 ```bash
-npm run sync -w @stars/core
+pnpm --filter @stars/core sync
 sqlite3 stars.db 'PRAGMA wal_checkpoint(TRUNCATE); VACUUM;'
 git commit -am "stars 스냅샷 갱신"
 ```
@@ -81,8 +81,8 @@ SELECT * FROM unstarred;  -- 뺀 별표 + 알아챈 시각
 ## 두 가지 동기화
 
 ```bash
-npm run sync -w @stars/core -- --full   # 전체 24페이지. 언스타까지 판정
-npm run sync -w @stars/core             # 새 별표만. 보통 1페이지
+pnpm --filter @stars/core sync --full   # 전체 24페이지. 언스타까지 판정
+pnpm --filter @stars/core sync          # 새 별표만. 보통 1페이지
 ```
 
 차이는 조회량이 아니라 **판정 범위**다. 증분은 목록의 앞부분만 보므로 `last_sync` 가 뒤처진 repo 가 있는 게 정상이다. 여기서 언스타를 판정하면 전부 오탐이 된다. 그래서 `finishSync` 는 목록 전체를 본 동기화에서만 판정한다.
@@ -211,7 +211,9 @@ node src/cli.ts test.db --from fixture.json # 신규 2 (재스타), first_sync �
 
 읽기 열기 로직(`immutable=1` 읽기 전용)은 core 의 `openDb(path, { readonly: true })` 하나이고, web 은 그걸 import 해 경로만 준다. `web/lib/db.ts` 가 모듈 스코프 싱글턴으로 감싸 웜 인보케이션에서 재사용한다.
 
-배포 대상은 Vercel 이다. 함수 번들에 `stars.db` 를 넣기 위해 `next.config.ts` 가 `outputFileTracingIncludes` 로 명시하고(import 되지 않는 바이너리라 트레이싱이 자동으로 잡지 못한다), `transpilePackages: ['@stars/core']` 로 core 의 `.ts` 를 Next 가 컴파일하게 한다. 트레이싱 루트는 모노레포 루트로 둔다 — next 와 core 가 루트 `node_modules` 로 호이스팅되기 때문이다.
+배포 대상은 Vercel 이다. 함수 번들에 `stars.db` 를 넣기 위해 `next.config.ts` 가 `outputFileTracingIncludes` 로 명시하고(import 되지 않는 바이너리라 트레이싱이 자동으로 잡지 못한다), `transpilePackages: ['@stars/core']` 로 core 의 `.ts` 를 Next 가 컴파일하게 한다.
+
+모노레포라 루트 설정 둘을 저장소 루트로 못박는다. `outputFileTracingRoot` 는 pnpm 의 `.pnpm` 스토어와 워크스페이스 심링크가 전부 루트 아래 있으므로 그 위에서 트레이스해야 완결된다. `turbopack.root` 는 Next 16 에서 필수다 — Turbopack 이 빌드 기본값인데 프로젝트 루트를 명시하지 않으면 `next build` 와 `next start` 가 RSC 클라이언트 매니페스트 경로를 다르게 잡아 런타임이 통째로 빈 페이지가 된다(`Could not find … in the React Client Manifest`).
 
 이 경로는 [cbcruk/omoji](https://github.com/cbcruk/omoji) 가 한 번 좌초해 Turso 로 우회했던 길이다. 차이는 바인딩 하나다: omoji 는 `better-sqlite3`(네이티브)였고, 여기는 `node:sqlite`(무바인딩, Node 24 stable)를 쓴다. 네이티브 컴파일이 없어 환경을 타지 않는다.
 
