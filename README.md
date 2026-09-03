@@ -11,6 +11,23 @@ sqlite3 stars.db < sql/views.sql
 
 런타임은 Bun 이다. `.ts` 를 그대로 실행하므로 빌드 단계가 없고, SQLite 는 내장 `bun:sqlite`, HTTP 는 내장 `fetch` 를 쓴다 — 런타임 의존성이 없다.
 
+## 저장소에 포함된 stars.db
+
+`stars.db` 는 커밋해서 관리한다. 개인용이고 5MB 안쪽이라 재현 스크립트를 두는 것보다
+스냅샷을 그대로 들고 다니는 편이 낫다 — 클론하면 바로 질의가 되고, 뷰도 적용된 상태다.
+
+갱신은 수동이다. 동기화한 뒤 WAL 을 접고 커밋한다.
+
+```bash
+bun src/cli.ts stars.db
+sqlite3 stars.db 'PRAGMA wal_checkpoint(TRUNCATE); VACUUM;'
+git commit -am "stars 스냅샷 갱신"
+```
+
+`VACUUM` 은 선택이지만 매 커밋이 4.5MB 블롭을 새로 쌓으므로 넣어둔다.
+`-wal`/`-shm` 은 `.gitignore` 에 있다 — 접지 않고 커밋하면 마지막 동기화가
+빠진 파일이 올라간다.
+
 ## 토큰
 
 `GITHUB_TOKEN` 또는 `GH_TOKEN` 을 먼저 보고, 없으면 `gh auth token` 을 부른다. `gh auth login` 이 되어 있으면 아무 설정 없이 돌아간다. 필요한 권한은 `starring:read` 하나뿐이다.
@@ -122,7 +139,7 @@ avatar_url = https://avatars.githubusercontent.com/u/{owner.id}?v=4
 ```
 전체 동기화   24 요청 / 60초 / 레이트 리밋 5,000 중 24 소모
 JSON 합계     3.0MB (평균 1,298B)
-stars.db      4.95MB
+stars.db      4.51MB (VACUUM 후)
 ```
 
 증분은 1 요청 / 2.5초다. 시간당 5,000 요청이라 리밋은 사실상 걸리지 않는다. 그래도 소진되면 복구 시각을 계산해서 알려준다.

@@ -1,9 +1,9 @@
 node_modules/
 
-# 생성물
-*.db
+# stars.db 는 개인용 스냅샷이라 커밋해서 관리한다(수동). 부속 파일만 제외.
 *.db-wal
 *.db-shm
+test.db
 fixture.json
 
 # 토큰이 섞일 수 있는 API 덤프
