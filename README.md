@@ -221,13 +221,25 @@ node src/cli.ts test.db --from fixture.json # 신규 2 (재스타), first_sync �
 
 `bun:sqlite`/`better-sqlite3` 에서 옮겨올 때 걸리는 곳이 셋 있다.
 
-`db.transaction()` 헬퍼가 없다. `BEGIN`/`COMMIT`/`ROLLBACK` 을 직접 건다(`core/src/db.ts` 의 `tx()`). `prepare` 는 제네릭 타입을 받지 않으므로 결과는 캐스팅한다.
+`db.transaction()` 헬퍼가 없다. `BEGIN`/`COMMIT`/`ROLLBACK` 을 직접 건다(`core/src/db.ts` 의 `tx()`). `prepare` 는 제네릭 타입을 받지 않으므로 결과는 캐스팅한다. 없는 row 는 `undefined` 다.
 
 ```ts
 const prev = find.get(repoId) as PrevRow | undefined
 ```
 
 그리고 `.all()`/`.get()` 은 **null-prototype 객체**를 돌려준다. RSC 에서 이 값을 클라이언트 컴포넌트로 넘기면 직렬화가 막히므로, 넘기기 전에 `.map(r => ({ ...r }))` 로 평범한 객체로 바꾼다. SQL 문자열 리터럴은 홑따옴표로 — `node:sqlite` 는 큰따옴표를 컬럼명으로 해석한다.
+
+`foreign_keys` 는 `DatabaseSync` 가 기본으로 켜므로 따로 걸 필요가 없다. `journal_mode`/`synchronous` 는 기본값이 아니라 직접 걸어야 한다.
+
+### 아직 부딪히지 않은 것들
+
+[fit-to-sqlite](https://github.com/cbcruk/fit-to-sqlite) 가 같은 바인딩 위에서 먼저 밟은 것들이다.
+
+바인딩 가능한 값은 `null`/number/bigint/string/`Uint8Array` 뿐이다. **boolean 은 던진다** — 플래그 컬럼은 `1`/`0` 으로 넣어야 한다. 이 저장소는 `ok`/`gone` 을 이미 정수로 다루고 있어서 지금은 걸리지 않는다.
+
+`run()` 의 `{ changes, lastInsertRowid }` 는 bigint 가 아니라 number 로 온다. `Number()` 로 감싸는 건 방어일 뿐 필요해서가 아니다.
+
+써드파티 SDK 의 콜백 안에서 INSERT 하는 구조라면, 그 SDK 가 콜백 예외를 삼키는지 확인해야 한다. 삼키면 쓰기 실패가 조용히 커밋된다. 이 저장소의 적재는 자기 루프 안에서 도므로 해당되지 않는다.
 
 ## 범위에 대한 미결
 
