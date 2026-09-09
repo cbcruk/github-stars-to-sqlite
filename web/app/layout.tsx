@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { AppTheme } from './theme'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -6,18 +7,13 @@ export const metadata: Metadata = {
   description: 'cbcruk 의 GitHub 별표를 서버에서 직접 검색',
 }
 
+// 폰트는 테마가 갖는다. neutral 은 시스템 폰트라 웹폰트 요청이 없다.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body>{children}</body>
+      <body>
+        <AppTheme>{children}</AppTheme>
+      </body>
     </html>
   )
 }

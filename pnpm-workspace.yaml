@@ -1,3 +1,6 @@
 packages:
   - core
   - web
+allowBuilds:
+  '@astryxdesign/cli': false
+  '@astryxdesign/core': false
