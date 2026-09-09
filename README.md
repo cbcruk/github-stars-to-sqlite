@@ -27,6 +27,7 @@ pnpm --filter @stars/web dev            # 검색 앱 (http://localhost:3000)
 
 ```bash
 pnpm --filter @stars/core sync
+node core/make-views.ts ./stars.db          # 뷰(분류 포함) 재적용
 sqlite3 stars.db 'PRAGMA wal_checkpoint(TRUNCATE); VACUUM;'
 git commit -am "stars 스냅샷 갱신"
 ```
@@ -152,6 +153,35 @@ stars.db      4.51MB (VACUUM 후)
 ```
 
 증분은 1 요청 / 2.5초다. 시간당 5,000 요청이라 리밋은 사실상 걸리지 않는다. 그래도 소진되면 복구 시각을 계산해서 알려준다.
+
+## 분류 — 키워드 휴리스틱
+
+별표 목록 API 는 도메인을 주지 않는다. 언어는 있지만 "이게 무슨 도구인지"는 없다. 그래서 이름·설명·토픽을 이어 붙인 문자열에 키워드를 걸어 열 개 도메인으로 가른다. 정의는 `core/src/categories.ts` 하나뿐이고, 뷰는 거기서 찍어낸다.
+
+```bash
+node core/make-views.ts              # views.sql 의 생성 구간만 갱신
+node core/make-views.ts ./stars.db   # 갱신 후 그 db 에 적용
+```
+
+네 조각이다. `repo_text`(뷰)가 이름·설명·토픽을 이어 붙인 검색용 문자열을 만들고, `repo_match`(뷰)가 GLOB 규칙을 건다. `repo_category`(**표**)는 그 결과를 굳혀 둔 것이고, `repo_primary_category`(뷰)가 거기서 대표 하나를 고른다.
+
+```sql
+SELECT category, count(*) FROM repo_primary_category GROUP BY 1;  -- 컬렉션의 모양
+SELECT * FROM repo_category WHERE repo_id = 45300;                -- 이 repo 의 전체 소속
+SELECT * FROM repo_match WHERE repo_id = 45300;                   -- 규칙을 직접 (느리다)
+```
+
+**단어 경계가 핵심이다.** `LIKE '%ai%'` 는 available·chain·main 에 전부 걸린다. 경계는 GLOB 의 문자 클래스가 갖는다 — `hay GLOB '*[^a-z0-9]ai[^a-z0-9]*'`. 키워드 안의 공백도 같은 클래스로 바뀌므로 `react native` 하나가 `react-native`·`react native`·`react_native` 를 함께 잡는다. 접두가 필요한 자리는 키워드 끝에 `*` 를 붙인다 — `test*` 가 test/tests/testing 을 함께 잡는다.
+
+처음에는 haystack 쪽에서 구분자를 공백으로 펴고 `LIKE '% ai %'` 를 걸었다. 그러려면 `replace()` 를 서른 번 겹쳐야 하는데, 그렇게 만든 뷰는 **sqlite3 CLI 가 스키마를 아예 못 읽는다**(`parser stack overflow`). node:sqlite 는 참고 넘어가서 한동안 안 보였다. 경계를 패턴 쪽으로 옮기니 중첩이 통째로 사라졌다.
+
+**규칙은 뷰, 읽기는 표.** `repo_match` 를 그대로 질의하면 repo 하나마다 패턴 수백 개를 GLOB 으로 훑어 2초가 걸린다 — 요청마다 도는 web 에는 못 쓴다. 정의는 뷰로 남겨 들여다볼 수 있게 두고, 읽기는 인덱스가 붙은 `repo_category` 표로 받는다(2,913행, 2초 → 3밀리초). README 가 말하는 "그래도 느리면 승격한다"의 그 자리다. 표는 `make-views.ts` 가 매번 통째로 다시 채우므로 규칙과 어긋날 일이 없다.
+
+**순서가 우선순위다.** `CATEGORIES` 배열 순서에서 먼저 걸린 것이 대표 도메인이 된다(`ord`). 좁은 도메인이 앞, 넓은 도메인이 뒤다. `ui` 를 앞에 두면 react 를 쓰는 차트 라이브러리까지 전부 ui 가 되어 버린다.
+
+별표 2,344개 중 1,796개(76.6%)가 어딘가에 걸리고, 걸린 repo 의 평균 소속은 1.7개다. 나머지는 분류하지 않고 그대로 둔다 — 억지로 채우면 도메인이 뜻을 잃는다.
+
+키워드를 고치면 `make-views.ts` 를 다시 돌린다. 적재는 건드리지 않으므로 재동기화가 필요 없다.
 
 ## 예시 질의
 
