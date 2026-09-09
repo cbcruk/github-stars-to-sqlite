@@ -237,7 +237,11 @@ node src/cli.ts test.db --from fixture.json # 신규 2 (재스타), first_sync �
 
 ## web — RSC 로 stars.db 직접 읽기
 
-`web/` 는 Next 앱이고, 커밋된 `stars.db` 를 RSC 에서 `node:sqlite` 로 직접 질의한다. Turso 같은 원격도, 정적 JSON 주입도 없다 — 파일을 그대로 읽는다. 상태는 URL(`?q &lang &sort`)이 갖고, 클라이언트 컴포넌트는 `router.replace` 로 URL 만 갱신한다.
+`web/` 는 Next 앱이고, 커밋된 `stars.db` 를 RSC 에서 `node:sqlite` 로 직접 질의한다. Turso 같은 원격도, 정적 JSON 주입도 없다 — 파일을 그대로 읽는다. 상태는 URL(`?q &lang &cat &sort`)이 갖고, 클라이언트 컴포넌트는 `router.replace` 로 URL 만 갱신한다. 검색·언어·도메인 필터는 전부 SQL 에서 좁힌다 — 행을 다 읽어와 JS 에서 거르지 않는다.
+
+화면은 [Astryx](https://github.com/facebook/astryx) 로 짰다. 앱 CSS 는 없다 — `web/app/globals.css` 는 reset·컴포넌트·테마 세 줄의 `@import` 뿐이고, 색·간격·타이포는 전부 `theme-neutral` 의 토큰에서 온다. 폰트도 테마가 갖고 있어 웹폰트 요청이 없다.
+
+예외가 하나 있다. 스펙트럼 막대(`web/app/spectrum.tsx`)는 비율로 늘어나는 막대에 맞는 컴포넌트가 없어 DOM 을 직접 쓴다. 이 앱에는 StyleX 컴파일러가 없어 `xstyle` 도 못 쓰므로 `style` + `var(--color-*)` 로만 칠한다. raw hex 나 px 은 넣지 않는다.
 
 읽기 열기 로직(`immutable=1` 읽기 전용)은 core 의 `openDb(path, { readonly: true })` 하나이고, web 은 그걸 import 해 경로만 준다. `web/lib/db.ts` 가 모듈 스코프 싱글턴으로 감싸 웜 인보케이션에서 재사용한다.
 
