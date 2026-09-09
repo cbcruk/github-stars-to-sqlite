@@ -1,4 +1,3 @@
-import { CATEGORIES } from '@stars/core'
 import { Layout, LayoutHeader, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout'
 import { HStack, StackItem, VStack } from '@astryxdesign/core/Stack'
 import { Text, Heading } from '@astryxdesign/core/Text'
@@ -11,23 +10,25 @@ import { Divider } from '@astryxdesign/core/Divider'
 import { Button } from '@astryxdesign/core/Button'
 import { Link } from '@astryxdesign/core/Link'
 import {
+  languageShape,
   languages,
   matches,
-  memberships,
   search,
-  shape,
+  topics as topicFacets,
   total,
   PAGE_SIZE,
   type Repo,
 } from '@/lib/queries'
+import { hueOf, type Hue } from './hues'
 import { Controls } from './controls'
 import { Spectrum } from './spectrum'
 
 export const dynamic = 'force-dynamic'
 
-type SP = Promise<{ q?: string; lang?: string; cat?: string; sort?: string }>
+type SP = Promise<{ q?: string; lang?: string; topic?: string; sort?: string }>
 
-const byId = new Map(CATEGORIES.map((c) => [c.id, c]))
+/** 카드에 다는 토픽 수. 많은 저장소는 열 개도 달고 있어서 카드가 무너진다. */
+const CARD_TOPICS = 4
 
 function stars(n: number): string {
   if (n >= 10000) return `${(n / 1000).toFixed(0)}k`
@@ -35,7 +36,7 @@ function stars(n: number): string {
   return String(n)
 }
 
-function RepoCard({ repo }: { repo: Repo }) {
+function RepoCard({ repo, hue }: { repo: Repo; hue: Hue | undefined }) {
   const name = repo.full_name.slice(repo.owner.length + 1)
   return (
     <ClickableCard href={repo.url} target="_blank" label={repo.full_name} padding={4}>
@@ -57,20 +58,13 @@ function RepoCard({ repo }: { repo: Repo }) {
         </StackItem>
 
         <HStack gap={2} wrap="wrap" vAlign="center">
-          {repo.language ? <Text type="supporting">{repo.language}</Text> : null}
-          {repo.categories.map((id) => {
-            const c = byId.get(id)
-            if (!c) return null
-            // 대표 도메인만 색을 갖는다. 나머지는 "여기에도 걸린다"는 표시다.
-            return (
-              <Token
-                key={id}
-                size="sm"
-                label={c.label}
-                color={id === repo.category ? c.hue : 'default'}
-              />
-            )
-          })}
+          {/* 언어 토큰의 색은 스펙트럼의 그 언어 칸과 같다. */}
+          {repo.language ? (
+            <Token size="sm" label={repo.language} color={hue ?? 'default'} />
+          ) : null}
+          {repo.topics.slice(0, CARD_TOPICS).map((t) => (
+            <Token key={t} size="sm" label={t} color="default" />
+          ))}
           {repo.archived ? <Badge label="archived" variant="warning" /> : null}
         </HStack>
       </VStack>
@@ -79,25 +73,25 @@ function RepoCard({ repo }: { repo: Repo }) {
 }
 
 export default async function Page({ searchParams }: { searchParams: SP }) {
-  const { q = '', lang = '', cat = '', sort = 'recent' } = await searchParams
+  const { q = '', lang = '', topic = '', sort = 'recent' } = await searchParams
   const query = q.trim()
 
   // 질의는 전부 서버에서 동기적으로 돈다. node:sqlite 는 sync API 라 await 이
   // 없고, 클라이언트로 내려가는 건 결과 행과 집계뿐이다.
-  const rows = search(query, lang, cat, sort)
-  const found = matches(query, lang, cat)
+  const rows = search(query, lang, topic, sort)
+  const found = matches(query, lang, topic)
   const count = total()
   const langs = languages()
-  const segments = shape()
-  const owned = memberships()
+  const chips = topicFacets()
+  const { named, rest } = languageShape()
 
-  const chips = CATEGORIES.filter((c) => owned.has(c.id)).map((c) => ({
-    key: c.id,
-    label: c.label,
-    n: owned.get(c.id) ?? 0,
-  }))
+  // 스펙트럼 순서가 곧 색 순서이고, 카드의 언어 토큰이 같은 색을 쓴다.
+  const hues = new Map<string, Hue>(named.map((l, i) => [l.key, hueOf(i)]))
+  const segments = named
+    .map((l, i) => ({ key: l.key, label: l.key, hue: hueOf(i), n: l.n }))
+    .concat(rest > 0 ? [{ key: '', label: '기타', hue: 'gray' as const, n: rest }] : [])
 
-  const filtered = Boolean(query || lang || cat)
+  const filtered = Boolean(query || lang || topic)
 
   return (
     <Layout
@@ -112,8 +106,8 @@ export default async function Page({ searchParams }: { searchParams: SP }) {
                 </Text>
                 <Heading level={1}>★ Star Index</Heading>
                 <Text type="supporting">
-                  별표 {count.toLocaleString()}개를 {CATEGORIES.length}개 도메인과{' '}
-                  {langs.length}개 언어로 갈라 둔 목록
+                  별표 {count.toLocaleString()}개를 GitHub 이 달아둔 언어와 토픽으로 훑는
+                  목록
                 </Text>
               </VStack>
               <VStack gap={0} align="end">
@@ -125,22 +119,14 @@ export default async function Page({ searchParams }: { searchParams: SP }) {
                 </Text>
               </VStack>
             </HStack>
-            <Spectrum
-              segments={segments.map((s) => ({
-                key: s.key,
-                label: byId.get(s.key)?.label ?? s.key,
-                hue: byId.get(s.key)?.hue ?? 'gray',
-                n: s.n,
-              }))}
-              active={cat}
-            />
+            <Spectrum segments={segments} active={lang} />
           </VStack>
         </LayoutHeader>
       }
       content={
         <LayoutContent padding={6}>
           <VStack gap={5}>
-            <Controls langs={langs} chips={chips} />
+            <Controls langs={langs} topics={chips} />
 
             <HStack justify="between" vAlign="center" gap={4} wrap="wrap">
               <Text type="supporting">
@@ -163,7 +149,11 @@ export default async function Page({ searchParams }: { searchParams: SP }) {
             ) : (
               <Grid columns={{ minWidth: 320 }} gap={4}>
                 {rows.map((r) => (
-                  <RepoCard key={r.full_name} repo={r} />
+                  <RepoCard
+                    key={r.full_name}
+                    repo={r}
+                    hue={r.language ? hues.get(r.language) : undefined}
+                  />
                 ))}
               </Grid>
             )}
@@ -174,13 +164,14 @@ export default async function Page({ searchParams }: { searchParams: SP }) {
         <LayoutFooter hasDivider padding={6}>
           <VStack gap={2}>
             <Text type="supporting">
-              분류는 저장소 이름·설명·토픽에 대한 키워드 휴리스틱이고, 대표 도메인은 그중
-              먼저 걸린 하나다. 하나의 저장소가 여러 도메인에 속할 수 있어 카드의 토큰이
-              전체 소속을 보여준다 — 경계는 사람이 다시 봐야 한다.
+              언어와 토픽은 GitHub 이 갖고 있는 값을 그대로 쓴다. 우리가 도메인을 지어내
+              붙이지 않는다 — 애매한 저장소를 어디에 넣을지는 사람도 쉽게 정하지 못하고,
+              한번 정하면 틀린 걸 알아챌 방법이 없기 때문이다. 분류가 필요해지는 질문이
+              생기면 그때 <Text type="code">repo_category</Text> 로 내려가서 만든다.
             </Text>
             <Text type="supporting">
               데이터: 커밋된 stars.db 스냅샷을 node:sqlite 로 immutable 읽기 · 상태는
-              URL(?q &amp;lang &amp;cat &amp;sort)이 보관 ·{' '}
+              URL(?q &amp;lang &amp;topic &amp;sort)이 보관 ·{' '}
               <Link href="https://github.com/cbcruk?tab=stars" target="_blank">
                 github.com/cbcruk?tab=stars
               </Link>

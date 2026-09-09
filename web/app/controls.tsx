@@ -10,8 +10,6 @@ import { HStack, StackItem, VStack } from '@astryxdesign/core/Stack'
 import { useUrlState } from './url-state'
 import type { Facet } from '@/lib/queries'
 
-export type Chip = { key: string; label: string; n: number }
-
 // 첫 항목이 기본값이다. 기본값은 URL 에 남기지 않는다.
 const SORTS = [
   { value: 'recent', label: '최근 star순' },
@@ -20,7 +18,7 @@ const SORTS = [
 ]
 const DEFAULT_SORT = SORTS[0].value
 
-export function Controls({ langs, chips }: { langs: Facet[]; chips: Chip[] }) {
+export function Controls({ langs, topics }: { langs: Facet[]; topics: Facet[] }) {
   const { params, set } = useUrlState()
   const [q, setQ] = useState(params.get('q') ?? '')
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -35,15 +33,15 @@ export function Controls({ langs, chips }: { langs: Facet[]; chips: Chip[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q])
 
-  const cat = params.get('cat') ?? ''
+  const topic = params.get('topic') ?? ''
   const options = [{ value: '', label: '모든 언어' }].concat(
     langs.map((l) => ({ value: l.key, label: `${l.key} · ${l.n}` })),
   )
 
   return (
     <VStack gap={4}>
-      {/* 검색과 두 셀렉터가 한 줄, 도메인 칩이 그 아래 한 줄을 통째로 쓴다.
-          칩이 열 개라 셀렉터와 폭을 나누면 마지막 칩이 넘쳐 흐른다. */}
+      {/* 검색과 두 셀렉터가 한 줄, 토픽 칩이 그 아래 한 줄을 통째로 쓴다.
+          칩이 스무 개라 셀렉터와 폭을 나눌 여지가 없다. */}
       <HStack gap={3} vAlign="center" wrap="wrap">
         <StackItem size="fill">
           <TextInput
@@ -74,10 +72,11 @@ export function Controls({ langs, chips }: { langs: Facet[]; chips: Chip[] }) {
           size="lg"
         />
       </HStack>
+      {/* GitHub 에 실제로 달려 있는 토픽이다. 우리가 만든 이름이 아니다. */}
       <ToggleButtonGroup
-        label="도메인으로 거르기"
-        value={cat}
-        onChange={(v) => set({ cat: typeof v === 'string' ? v : '' })}
+        label="토픽으로 거르기"
+        value={topic}
+        onChange={(v) => set({ topic: typeof v === 'string' ? v : '' })}
       >
         <OverflowList
           gap={1}
@@ -86,14 +85,14 @@ export function Controls({ langs, chips }: { langs: Facet[]; chips: Chip[] }) {
             <DropdownMenu
               button={{ label: `+${hidden.length}`, variant: 'ghost', size: 'lg' }}
               items={hidden.map(({ index }) => ({
-                label: `${chips[index].label} · ${chips[index].n}`,
-                onClick: () => set({ cat: chips[index].key }),
+                label: `${topics[index].key} · ${topics[index].n}`,
+                onClick: () => set({ topic: topics[index].key }),
               }))}
             />
           )}
         >
-          {chips.map((c) => (
-            <ToggleButton key={c.key} value={c.key} label={`${c.label} · ${c.n}`} size="lg" />
+          {topics.map((t) => (
+            <ToggleButton key={t.key} value={t.key} label={`${t.key} · ${t.n}`} size="lg" />
           ))}
         </OverflowList>
       </ToggleButtonGroup>
