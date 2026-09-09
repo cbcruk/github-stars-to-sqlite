@@ -1,4 +1,3 @@
-import { CATEGORIES } from '@stars/core'
 import { db } from './db'
 
 export type Repo = {
@@ -10,10 +9,8 @@ export type Repo = {
   stars: number
   archived: number
   starred_at: string
-  /** 대표 도메인. 어떤 키워드에도 걸리지 않으면 null. */
-  category: string | null
-  /** 전체 소속. CATEGORIES 순서로 정렬된다. */
-  categories: string[]
+  /** 이 저장소에 GitHub 에 실제로 달려 있는 토픽. 언어와 이름이 겹치는 것은 뺀다. */
+  topics: string[]
 }
 
 export type Facet = { key: string; n: number }
@@ -21,27 +18,30 @@ export type Facet = { key: string; n: number }
 /** 화면에 한 번에 그리는 카드 수. 나머지는 검색·필터로 좁혀서 본다. */
 export const PAGE_SIZE = 120
 
+/** 칩으로 내보내는 토픽 수. 넘치면 OverflowList 가 +N 으로 접는다. */
+export const TOPIC_CHIPS = 20
+
+/** 스펙트럼에 이름을 갖고 나오는 언어 수. 나머지는 '기타' 로 합친다. */
+export const SPECTRUM_LANGS = 9
+
 // node:sqlite 는 SQL 안의 큰따옴표를 컬럼명으로 해석한다. 문자열 리터럴은
 // 반드시 홑따옴표로 쓴다.
 //
-// 분류는 repo_category(전체 소속)와 repo_primary_category(대표) 두 뷰가 갖는다.
-// 정의는 core/src/categories.ts 고 뷰는 거기서 찍어낸 것이다 — 여기서는 조인만
-// 한다. 필터는 소속 기준이라 chip 을 누르면 대표가 아닌 repo 도 함께 나온다.
+// 분류는 GitHub 이 갖고 있는 것만 쓴다 — 언어(repo 당 0 또는 1개)와 토픽(여러 개).
+// 우리가 지어낸 도메인은 화면에서 쓰지 않는다. 정의는 core/src/categories.ts 에
+// 그대로 남아 있고 repo_category 로 질의할 수 있다. 분석이 필요해지면 그때 쓴다.
 const WHERE = `
   WHERE (?1 = '' OR s.full_name LIKE ?2 OR s.description LIKE ?2 OR s.owner LIKE ?2)
     AND (?3 = '' OR s.language = ?3)
     AND (?4 = '' OR EXISTS (
-          SELECT 1 FROM repo_category c
-          WHERE c.repo_id = s.repo_id AND c.category = ?4))`
+          SELECT 1 FROM topic t WHERE t.repo_id = s.repo_id AND t.topic = ?4))`
 
 const SEARCH = `
   SELECT s.full_name, s.url, s.owner, s.description, s.language, s.stars,
          s.archived, s.starred_at,
-         p.category AS category,
-         (SELECT group_concat(c.category, ' ')
-            FROM repo_category c WHERE c.repo_id = s.repo_id) AS memberships
+         (SELECT group_concat(t.topic, ' ')
+            FROM topic t WHERE t.repo_id = s.repo_id) AS topic_list
   FROM starred s
-  LEFT JOIN repo_primary_category p ON p.repo_id = s.repo_id
   ${WHERE}
   ORDER BY
     CASE ?5 WHEN 'recent' THEN s.starred_at END DESC,
@@ -51,6 +51,18 @@ const SEARCH = `
 
 const MATCHES = `SELECT count(*) AS n FROM starred s ${WHERE}`
 
+// 언어 이름과 같은 토픽은 뺀다. 'javascript' 칩과 JavaScript 언어 필터가 같은
+// 자리를 두고 다투기 때문이다. 이름 비교뿐이라 판단이 들어가지 않는다.
+const LANGUAGE_NAMES = `SELECT lower(language) FROM starred WHERE language IS NOT NULL`
+
+const TOPICS = `
+  SELECT topic AS key, count(*) AS n
+  FROM topic
+  WHERE lower(topic) NOT IN (${LANGUAGE_NAMES})
+  GROUP BY topic
+  ORDER BY n DESC, topic ASC
+  LIMIT ?`
+
 const LANGS = `
   SELECT language AS key, count(*) AS n
   FROM starred
@@ -59,56 +71,52 @@ const LANGS = `
   ORDER BY n DESC
   LIMIT 20`
 
-// 스펙트럼은 대표 도메인이라 겹치지 않는다 — 컬렉션의 모양을 그대로 나눈다.
-const SHAPE = `
-  SELECT category AS key, count(*) AS n
-  FROM repo_primary_category
-  GROUP BY category`
-
-// chip 의 숫자는 소속 기준이다. 눌렀을 때 나오는 수와 같아야 하기 때문이다.
-const MEMBERSHIPS = `
-  SELECT category AS key, count(*) AS n
-  FROM repo_category
-  GROUP BY category`
+// 스펙트럼용. 언어 없는 repo 까지 세야 합이 전체와 맞는다.
+const LANG_SHAPE = `
+  SELECT coalesce(language, '') AS key, count(*) AS n
+  FROM starred
+  GROUP BY language
+  ORDER BY n DESC`
 
 const TOTAL = `SELECT count(*) AS n FROM starred`
-
-const rank = new Map(CATEGORIES.map((c, i) => [c.id, i]))
 
 /** .all() 은 null-prototype 객체를 준다. 클라이언트로 넘기기 전에 평범하게 만든다. */
 function plain<T>(rows: unknown[]): T[] {
   return rows.map((r) => ({ ...(r as object) })) as T[]
 }
 
-export function search(q: string, lang: string, cat: string, sort: string): Repo[] {
-  const rows = db().prepare(SEARCH).all(q, `%${q}%`, lang, cat, sort)
-  return plain<Repo & { memberships: string | null }>(rows).map(
-    ({ memberships, ...r }) => ({
-      ...r,
-      categories: (memberships ?? '')
-        .split(' ')
-        .filter(Boolean)
-        .sort((a, b) => (rank.get(a) ?? 99) - (rank.get(b) ?? 99)),
-    }),
-  )
+export function search(q: string, lang: string, topic: string, sort: string): Repo[] {
+  const rows = db().prepare(SEARCH).all(q, `%${q}%`, lang, topic, sort)
+  return plain<Repo & { topic_list: string | null }>(rows).map(({ topic_list, ...r }) => {
+    const own = (topic_list ?? '').split(' ').filter(Boolean)
+    // 카드에서도 언어와 겹치는 토픽은 뺀다. 바로 옆에 언어가 이미 있다.
+    const lower = r.language?.toLowerCase()
+    return { ...r, topics: own.filter((t) => t !== lower) }
+  })
 }
 
-export function matches(q: string, lang: string, cat: string): number {
-  return (db().prepare(MATCHES).get(q, `%${q}%`, lang, cat) as { n: number }).n
+export function matches(q: string, lang: string, topic: string): number {
+  return (db().prepare(MATCHES).get(q, `%${q}%`, lang, topic) as { n: number }).n
+}
+
+export function topics(limit = TOPIC_CHIPS): Facet[] {
+  return plain<Facet>(db().prepare(TOPICS).all(limit))
 }
 
 export function languages(): Facet[] {
   return plain<Facet>(db().prepare(LANGS).all())
 }
 
-export function shape(): Facet[] {
-  const counts = new Map(plain<Facet>(db().prepare(SHAPE).all()).map((f) => [f.key, f.n]))
-  // CATEGORIES 순서로 낸다. 스펙트럼의 색 배열이 매번 같아야 읽힌다.
-  return CATEGORIES.map((c) => ({ key: c.id, n: counts.get(c.id) ?? 0 })).filter((f) => f.n > 0)
-}
-
-export function memberships(): Map<string, number> {
-  return new Map(plain<Facet>(db().prepare(MEMBERSHIPS).all()).map((f) => [f.key, f.n]))
+/**
+ * 스펙트럼. 언어는 repo 당 0 또는 1개라 겹치지 않는다 — 컬렉션을 그대로 나눈다.
+ * 59개를 전부 그리면 실오라기가 되므로 상위 몇 개만 이름을 갖고 나머지는 합친다.
+ * 합친 칸은 필터가 되지 않는다. '그 외 전부'는 눌러서 볼 만한 묶음이 아니다.
+ */
+export function languageShape(): { named: Facet[]; rest: number } {
+  const all = plain<Facet>(db().prepare(LANG_SHAPE).all())
+  const named = all.filter((f) => f.key !== '').slice(0, SPECTRUM_LANGS)
+  const rest = all.reduce((a, f) => a + f.n, 0) - named.reduce((a, f) => a + f.n, 0)
+  return { named, rest }
 }
 
 export function total(): number {
