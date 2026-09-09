@@ -79,7 +79,7 @@ function RepoCard({ repo }: { repo: Repo }) {
 }
 
 export default async function Page({ searchParams }: { searchParams: SP }) {
-  const { q = '', lang = '', cat = '', sort = 'stars' } = await searchParams
+  const { q = '', lang = '', cat = '', sort = 'recent' } = await searchParams
   const query = q.trim()
 
   // 질의는 전부 서버에서 동기적으로 돈다. node:sqlite 는 sync API 라 await 이
