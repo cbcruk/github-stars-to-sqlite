@@ -12,11 +12,13 @@ import type { Facet } from '@/lib/queries'
 
 export type Chip = { key: string; label: string; n: number }
 
+// 첫 항목이 기본값이다. 기본값은 URL 에 남기지 않는다.
 const SORTS = [
-  { value: 'stars', label: '스타순' },
   { value: 'recent', label: '최근 star순' },
+  { value: 'stars', label: '스타순' },
   { value: 'name', label: '이름순' },
 ]
+const DEFAULT_SORT = SORTS[0].value
 
 export function Controls({ langs, chips }: { langs: Facet[]; chips: Chip[] }) {
   const { params, set } = useUrlState()
@@ -67,8 +69,8 @@ export function Controls({ langs, chips }: { langs: Facet[]; chips: Chip[] }) {
           label="정렬"
           isLabelHidden
           options={SORTS}
-          value={params.get('sort') ?? 'stars'}
-          onChange={(v) => set({ sort: v === 'stars' ? '' : (v ?? '') })}
+          value={params.get('sort') ?? DEFAULT_SORT}
+          onChange={(v) => set({ sort: v === DEFAULT_SORT ? '' : (v ?? '') })}
           size="lg"
         />
       </HStack>
