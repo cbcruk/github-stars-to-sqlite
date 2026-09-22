@@ -1,50 +1,45 @@
 # github-stars-to-sqlite
 
-GitHub 에 눌러둔 별표를 SQLite 하나에 적재하고, 그 위에서 검색한다. 적재와 조회를 분리해 [fit-to-sqlite](https://github.com/cbcruk/fit-to-sqlite) 의 "적재는 이 저장소 책임, 분석은 `.db` 받는 쪽" 원칙을 두 패키지로 나눴다.
+GitHub 별표를 SQLite 파일 하나에 적재하고, 그 위에서 검색한다.
 
 ```
 github-stars-to-sqlite/     # pnpm workspaces
-├─ core/     CLI + 적재 — GitHub → stars.db. react 의존 없음
+├─ core/     CLI + 적재 — GitHub → stars.db. 런타임 의존성 없음
 ├─ web/      Next 앱 — stars.db 를 RSC 에서 직접 읽는 검색 뷰
-└─ stars.db  캐넌컬 스냅샷 (커밋됨). core 가 쓰고, web 이 읽는다
+└─ stars.db  스냅샷 (커밋됨). core 가 쓰고, web 이 읽는다
 ```
 
 ```bash
-pnpm install                            # 워크스페이스 전체
-pnpm --filter @stars/core sync --full   # 전체 동기화 (루트 stars.db)
-pnpm --filter @stars/core sync          # 이후에는 증분
-pnpm --filter @stars/web dev            # 검색 앱 (http://localhost:3000)
+pnpm install
+pnpm --filter @stars/core sync --full   # 전체 동기화
+pnpm --filter @stars/core sync          # 증분 동기화
+pnpm --filter @stars/web dev            # http://localhost:3000
 ```
 
-런타임은 Node 24 다. 타입 스트리핑으로 `.ts` 를 그대로 실행하므로 빌드 단계가 없고, SQLite 는 내장 `node:sqlite`, HTTP 는 내장 `fetch` 를 쓴다 — core 는 런타임 의존성이 없다. 예전엔 Bun 이었지만, Node 24 가 `.ts` 직접 실행과 내장 SQLite 를 둘 다 갖추면서 web(Node/Vercel)과 런타임·바인딩을 통일할 수 있게 돼 옮겼다.
+런타임은 Node 24 다. `.ts` 를 타입 스트리핑으로 바로 실행하고, SQLite 는 `node:sqlite`, HTTP 는 `fetch` 를 쓴다. 빌드 단계는 없다.
 
-## 저장소에 포함된 stars.db
+동작 명세는 [SPEC.md](./SPEC.md) 에 있다.
 
-`stars.db` 는 커밋해서 관리한다. 개인용이고 5MB 안쪽이라 재현 스크립트를 두는 것보다
-스냅샷을 그대로 들고 다니는 편이 낫다 — 클론하면 바로 질의가 되고, 뷰도 적용된 상태다.
+## 토큰
 
-갱신은 수동이다. 동기화한 뒤 WAL 을 접고 커밋한다.
+`GITHUB_TOKEN` → `GH_TOKEN` → `gh auth token` 순으로 찾는다. 필요한 권한은 `starring:read` 하나다.
+
+## stars.db 스냅샷
+
+`stars.db` 는 커밋한다. 5MB 안쪽이라 클론하면 뷰까지 적용된 상태로 바로 질의할 수 있다. 갱신은 수동이다.
 
 ```bash
 pnpm --filter @stars/core sync
-node core/make-views.ts ./stars.db          # 뷰(분류 포함) 재적용
+node core/make-views.ts ./stars.db
 sqlite3 stars.db 'PRAGMA wal_checkpoint(TRUNCATE); VACUUM;'
 git commit -am "stars 스냅샷 갱신"
 ```
 
-`sync` 스크립트는 루트의 `stars.db` 를 대상으로 돈다. web 은 이 파일을 빌드 때 자기 디렉터리로 복사해(`web/scripts/copy-db.mjs`) 번들에 넣으므로, 원본은 루트 하나뿐이다.
-
-`VACUUM` 은 선택이지만 매 커밋이 4.5MB 블롭을 새로 쌓으므로 넣어둔다.
-`-wal`/`-shm` 은 `.gitignore` 에 있다 — 접지 않고 커밋하면 마지막 동기화가
-빠진 파일이 올라간다.
-
-## 토큰
-
-`GITHUB_TOKEN` 또는 `GH_TOKEN` 을 먼저 보고, 없으면 `gh auth token` 을 부른다. `gh auth login` 이 되어 있으면 아무 설정 없이 돌아간다. 필요한 권한은 `starring:read` 하나뿐이다.
+- WAL 을 접지 않고 커밋하면 마지막 동기화가 빠진다. `-wal`/`-shm` 은 `.gitignore` 에 있다.
+- `VACUUM` 은 커밋마다 쌓이는 블롭 크기를 줄이려고 넣는다.
+- 원본은 루트의 `stars.db` 하나다. web 은 빌드 때 `web/scripts/copy-db.mjs` 로 복사해 번들에 넣는다.
 
 ## 스키마
-
-테이블은 둘뿐이다.
 
 ```
 sync(id, mode, started_at, finished_at, pages, seen, added, changed, gone, ok)
@@ -52,7 +47,7 @@ star(repo_id PK, full_name, starred_at, sha256, data JSON,
      first_sync, last_sync, unstarred_sync)
 ```
 
-repo 하나가 row 하나고, 본문은 GitHub 응답 필드명 그대로의 JSON 이다(`stargazers_count`, `pushed_at` … 스네이크로 온 걸 그대로 둔다). 어떤 필드를 컬럼으로 승격할지 미리 정하지 않는다. 질의를 몇 번 돌려서 실제 쓰는 필드가 드러난 다음 `core/sql/views.sql` 에 뷰로 굳히고, 그래도 느리면 생성 컬럼으로 승격한다. 셋 다 재적재가 필요 없다.
+repo 하나가 row 하나이고, `data` 는 GitHub 응답을 필드명 그대로 담은 JSON 이다. 자주 쓰는 필드는 `core/sql/views.sql` 의 뷰로 꺼내고, 느리면 생성 컬럼으로 승격한다. 어느 쪽도 재적재가 필요 없다.
 
 ```sql
 ALTER TABLE star ADD COLUMN language TEXT
@@ -60,9 +55,7 @@ ALTER TABLE star ADD COLUMN language TEXT
 CREATE INDEX star_language ON star(language) WHERE unstarred_sync IS NULL;
 ```
 
-## 별표 타임라인
-
-`.fit` 파일과 다른 점은 원본이 파일이 아니라 계속 변하는 원격 목록이라는 것이다. 그래서 "지금 별표한 것"만으로는 부족하고, 언제부터 보였고 언제 사라졌는지가 남아야 한다. 세 컬럼이 그 일을 한다.
+### 별표 타임라인
 
 | 컬럼 | 뜻 |
 | --- | --- |
@@ -70,54 +63,30 @@ CREATE INDEX star_language ON star(language) WHERE unstarred_sync IS NULL;
 | `last_sync` | 목록에서 마지막으로 확인된 동기화 |
 | `unstarred_sync` | 사라진 걸 알아챈 동기화. `NULL` 이면 현재 별표 |
 
-별표를 빼도 row 는 지우지 않는다. 그래서 "작년에 뺀 게 뭐였더라"가 조회 가능하다.
+별표를 빼도 row 는 지우지 않는다. 다시 누르면 `unstarred_sync` 만 `NULL` 로 돌리고 `first_sync` 는 유지한다. `starred_at` 은 새 값으로 바뀐다 — GitHub 가 원래 시각을 돌려주지 않는다.
 
 ```sql
-SELECT * FROM starred;    -- 현재 별표 (unstarred_sync IS NULL)
-SELECT * FROM unstarred;  -- 뺀 별표 + 알아챈 시각
+SELECT * FROM starred;    -- 현재 별표
+SELECT * FROM unstarred;  -- 뺀 별표
 ```
 
-뺐던 별표를 다시 누르면 `unstarred_sync` 만 `NULL` 로 돌리고 `first_sync` 는 그대로 둔다. 처음 본 시점을 덮어쓰지 않기 위해서다. 대신 `starred_at` 은 새 값으로 바뀐다 — GitHub 가 원래 누른 시각을 기억하지 않기 때문이다.
-
-## 두 가지 동기화
+## 동기화
 
 ```bash
-pnpm --filter @stars/core sync --full   # 전체 24페이지. 언스타까지 판정
+pnpm --filter @stars/core sync --full   # 전체. 언스타까지 판정
 pnpm --filter @stars/core sync          # 새 별표만. 보통 1페이지
 ```
 
-차이는 조회량이 아니라 **판정 범위**다. 증분은 목록의 앞부분만 보므로 `last_sync` 가 뒤처진 repo 가 있는 게 정상이다. 여기서 언스타를 판정하면 전부 오탐이 된다. 그래서 `finishSync` 는 목록 전체를 본 동기화에서만 판정한다.
+- **언스타 판정은 전체 동기화에서만 한다.** 증분은 목록 앞부분만 보므로 판정하면 전부 오탐이다. DB 가 비어 있으면 `--full` 없이도 전체로 돈다.
+- **정렬 방향이 모드마다 다르다.** `sort=created` 는 별표를 누른 시각 기준이다. `desc` 는 동기화 도중 새 별표가 생기면 페이지가 밀려 repo 하나를 건너뛸 수 있어서, 정확성이 필요한 전체 동기화는 `asc` 를 쓴다. 증분은 `desc` 로 앞부분만 훑고, `max(starred_at)` 이상인 항목까지 넣은 뒤 멈춘다.
+- **페이지 하나가 트랜잭션 하나다.** 중간에 끊기면 앞 페이지는 남고 그 동기화는 `ok=0` 으로 끝난다. `ok=0` 인 동기화는 언스타를 판정하지 않는다. 다시 돌리면 된다.
+- **멱등이다.** `repo_id` 가 기준이고, 페이로드 변경은 정규화된 JSON 의 `sha256` 으로 판정한다. 변경 이력은 남기지 않고 최신값으로 덮어쓴다 — `stargazers_count` 같은 값이 늘 바뀌어 회당 수 MB 가 쌓이기 때문이다. 변한 건수만 `sync.changed` 에 남는다.
 
-```sql
-UPDATE star SET unstarred_sync = ? WHERE unstarred_sync IS NULL AND last_sync < ?
-```
+레이트 리밋에 걸리면 복구 시각을 계산해서 알려준다.
 
-DB 가 비어 있으면 `--full` 없이도 전체로 돈다. 증분은 비교할 컷오프가 없기 때문이다.
+## 정규화
 
-### direction 이 왜 모드마다 다른가
-
-`sort=created` 는 repo 생성이 아니라 **별표를 누른 시각** 기준이다. 여기까지는 문서대로인데, `direction` 은 페이지네이션 안정성까지 바꾼다.
-
-- **`desc`(기본)** — 새 별표가 맨 앞에 붙는다. 동기화 도중에 별표를 하나 누르면 뒤의 전체가 한 칸씩 밀려서 경계에 걸친 repo 하나를 통째로 건너뛴다.
-- **`asc`** — 새 별표가 마지막 페이지 뒤에 붙는다. 앞 페이지가 흔들리지 않는다.
-
-전체 동기화는 정확성이 목적이므로 `asc`, 증분은 앞부분만 훑고 빠지는 게 목적이므로 `desc` 를 쓴다. 증분의 컷오프는 `max(starred_at)` 이고, 그 값 **이상**인 항목까지 적재한 뒤 멈춘다. 같은 초에 별표 둘이 걸린 경우를 놓치지 않기 위해 경계를 다시 넣는데, 재적재는 멱등이라 비용이 없다.
-
-`asc` 도 동기화 도중 별표를 **빼면** 밀린다. 다만 그 경우 놓친 repo 는 다음 전체 동기화에서 다시 잡히고, 그 사이에 오탐으로 언스타 판정되는 일은 없다 — 판정은 목록에 없는 repo 를 대상으로 하기 때문이다.
-
-## 정규화 범위
-
-`core/src/normalize.ts` 가 하는 일은 하나다. **`url` 또는 `*_url` 인 키를 재귀적으로 지운다.** 예외는 `mirror_url` 하나다.
-
-응답 payload 의 3/4 가 `full_name` 과 `owner.id` 에서 기계적으로 복원되는 URL 템플릿이다. repo 당 40여 개가 이렇게 생겼다.
-
-```json
-"git_refs_url": "https://api.github.com/repos/shadcn-ui/cn/git/refs{/sha}",
-"archive_url":  "https://api.github.com/repos/shadcn-ui/cn/{archive_format}{/ref}",
-"notifications_url": "https://api.github.com/repos/shadcn-ui/cn/notifications{?since,all,participating}",
-```
-
-실측으로 repo 당 평균 **5,370B → 1,283B (24%)** 다. 복원식은 이렇다.
+`core/src/normalize.ts` 는 `url` 또는 `*_url` 인 키를 재귀적으로 지운다. 예외는 복원할 수 없는 `mirror_url` 하나다. 나머지 URL 은 `full_name` 과 `owner.id` 로 복원되며, 이것만으로 repo 당 평균 5,370B → 1,283B 가 된다.
 
 ```
 html_url   = https://github.com/{full_name}
@@ -126,89 +95,36 @@ avatar_url = https://avatars.githubusercontent.com/u/{owner.id}?v=4
 *_url(API) = https://api.github.com/repos/{full_name}/...
 ```
 
-`homepage` 는 키 이름이 `_url` 로 끝나지 않아 규칙에 걸리지 않고, `mirror_url` 은 유일하게 복원 불가라 예외로 남긴다. `core/sql/views.sql` 의 `starred.url` 이 `'https://github.com/' || full_name` 으로 복원한다.
+`starred_at` 만 unix epoch(초)로 바꿔 컬럼으로 뽑는다. 나머지 시각은 ISO 문자열 그대로 두고 뷰에서 `date()` 로 읽는다.
 
-`starred_at` 만 ISO 8601 → unix epoch(초)로 바꿔 컬럼으로 뽑는다. 인덱스와 범위 질의를 위해서다. 나머지 시각(`pushed_at`, `created_at`)은 ISO 문자열 그대로 두고 뷰에서 `date()` 로 판다 — SQLite 가 `Z` 접미사를 그대로 읽는다.
+## 분류 (분석용)
 
-## 멱등성
-
-`repo_id` 가 기준이다. 같은 목록을 다시 넣으면 `last_sync` 만 갱신되고 페이로드는 손대지 않는다. 페이로드가 바뀌었는지는 정규화된 JSON 의 `sha256` 으로 판정한다.
-
-페이지 하나가 트랜잭션 하나다. 24페이지 중 17페이지에서 네트워크가 끊기면 앞 16페이지는 남고 그 동기화는 `ok=0` 으로 끝난다. **`ok=0` 인 동기화는 언스타를 판정하지 않는다** — 반쪽 목록으로 판정하면 못 본 repo 전부가 언스타로 오탐되기 때문이다. 다시 돌리면 된다.
-
-## 변경 이력을 남기지 않는 이유
-
-`sha256` 이 바뀔 때마다 새 버전 row 를 append 하는 안을 검토했다가 뺐다. `stargazers_count` 와 `pushed_at` 이 늘 움직여서 동기화 1회에 거의 전 repo 가 새 row 를 만든다. 2,344개 기준 회당 +3MB 가 쌓이는데, 그 3MB 의 대부분은 남의 저장소 인기 추이지 내 별표 기록이 아니다.
-
-지금은 페이로드를 최신값으로 덮어쓰고, 변한 건수만 `sync.changed` 에 남긴다. 나중에 필요해지면 `star_version(repo_id, sync_id, sha256, data)` 를 추가하고 `ingestPage` 의 UPDATE 자리에서 INSERT 를 하나 더 하면 된다. 기존 데이터는 그대로 쓸 수 있다.
-
-## 저장 비용
-
-별표 2,344개 기준.
-
-```
-전체 동기화   24 요청 / 60초 / 레이트 리밋 5,000 중 24 소모
-JSON 합계     3.0MB (평균 1,298B)
-stars.db      4.51MB (VACUUM 후)
-```
-
-증분은 1 요청 / 2.5초다. 시간당 5,000 요청이라 리밋은 사실상 걸리지 않는다. 그래도 소진되면 복구 시각을 계산해서 알려준다.
-
-## 분류 — 키워드 휴리스틱 (분석용)
-
-별표 목록 API 는 도메인을 주지 않는다. 언어는 있지만 "이게 무슨 도구인지"는 없다. 그래서 이름·설명·토픽을 이어 붙인 문자열에 키워드를 걸어 열 개 도메인으로 가른다. 정의는 `core/src/categories.ts` 하나뿐이고, 뷰는 거기서 찍어낸다.
-
-**web 화면은 이걸 쓰지 않는다.** 한번 화면에 올려 봤다가 내렸다 — 아래 「도메인을 지어내지 않는 이유」에 그 기록이 있다. 지금은 `sqlite3` 로 질의할 때 쓰는 분석 도구다.
+이름·설명·토픽에 키워드를 걸어 열 개 도메인으로 나누는 휴리스틱이다. 정의는 `core/src/categories.ts` 이고, 뷰는 거기서 생성한다. **web 화면은 쓰지 않는다** — 이유는 [SPEC.md](./SPEC.md#분류를-왜-안-만들었나) 에 있다.
 
 ```bash
 node core/make-views.ts              # views.sql 의 생성 구간만 갱신
 node core/make-views.ts ./stars.db   # 갱신 후 그 db 에 적용
 ```
 
-네 조각이다. `repo_text`(뷰)가 이름·설명·토픽을 이어 붙인 검색용 문자열을 만들고, `repo_match`(뷰)가 GLOB 규칙을 건다. `repo_category`(**표**)는 그 결과를 굳혀 둔 것이고, `repo_primary_category`(뷰)가 거기서 대표 하나를 고른다.
+| 이름 | 종류 | 역할 |
+| --- | --- | --- |
+| `repo_text` | 뷰 | 이름·설명·토픽을 이어 붙인 검색 문자열 |
+| `repo_match` | 뷰 | GLOB 규칙 (느리다, 2초) |
+| `repo_category` | 표 | `repo_match` 결과를 굳힌 것. 인덱스 있음 (3ms) |
+| `repo_primary_category` | 뷰 | 대표 도메인 하나 |
 
 ```sql
-SELECT category, count(*) FROM repo_primary_category GROUP BY 1;  -- 컬렉션의 모양
-SELECT * FROM repo_category WHERE repo_id = 45300;                -- 이 repo 의 전체 소속
-SELECT * FROM repo_match WHERE repo_id = 45300;                   -- 규칙을 직접 (느리다)
+SELECT category, count(*) FROM repo_primary_category GROUP BY 1;
+SELECT * FROM repo_category WHERE repo_id = 45300;
 ```
 
-**단어 경계가 핵심이다.** `LIKE '%ai%'` 는 available·chain·main 에 전부 걸린다. 경계는 GLOB 의 문자 클래스가 갖는다 — `hay GLOB '*[^a-z0-9]ai[^a-z0-9]*'`. 키워드 안의 공백도 같은 클래스로 바뀌므로 `react native` 하나가 `react-native`·`react native`·`react_native` 를 함께 잡는다. 접두가 필요한 자리는 키워드 끝에 `*` 를 붙인다 — `test*` 가 test/tests/testing 을 함께 잡는다.
-
-처음에는 haystack 쪽에서 구분자를 공백으로 펴고 `LIKE '% ai %'` 를 걸었다. 그러려면 `replace()` 를 서른 번 겹쳐야 하는데, 그렇게 만든 뷰는 **sqlite3 CLI 가 스키마를 아예 못 읽는다**(`parser stack overflow`). node:sqlite 는 참고 넘어가서 한동안 안 보였다. 경계를 패턴 쪽으로 옮기니 중첩이 통째로 사라졌다.
-
-**규칙은 뷰, 읽기는 표.** `repo_match` 를 그대로 질의하면 repo 하나마다 패턴 수백 개를 GLOB 으로 훑어 2초가 걸린다 — 요청마다 도는 web 에는 못 쓴다. 정의는 뷰로 남겨 들여다볼 수 있게 두고, 읽기는 인덱스가 붙은 `repo_category` 표로 받는다(2,913행, 2초 → 3밀리초). README 가 말하는 "그래도 느리면 승격한다"의 그 자리다. 표는 `make-views.ts` 가 매번 통째로 다시 채우므로 규칙과 어긋날 일이 없다.
-
-**순서가 우선순위다.** `CATEGORIES` 배열 순서에서 먼저 걸린 것이 대표 도메인이 된다(`ord`). 좁은 도메인이 앞, 넓은 도메인이 뒤다. `ui` 를 앞에 두면 react 를 쓰는 차트 라이브러리까지 전부 ui 가 되어 버린다.
-
-별표 2,344개 중 1,796개(76.6%)가 어딘가에 걸리고, 걸린 repo 의 평균 소속은 1.7개다. 나머지는 분류하지 않고 그대로 둔다 — 억지로 채우면 도메인이 뜻을 잃는다.
-
-키워드를 고치면 `make-views.ts` 를 다시 돌린다. 적재는 건드리지 않으므로 재동기화가 필요 없다.
-
-## 도메인을 지어내지 않는 이유
-
-위 분류를 화면의 칩과 스펙트럼으로 한번 올려 봤다. 내린 이유를 남긴다. 코드는 그대로 있으니 다시 올리고 싶어질 때 이걸 먼저 읽으면 된다.
-
-| | 커버리지 | repo 당 개수 | 출처 |
-| --- | --- | --- | --- |
-| 지어낸 대표 도메인 | 76.6% | 겹침 — 45%가 2개 이상 | 우리 추측 |
-| 언어 | 96.0% | 0 또는 1 | GitHub |
-
-- **빠뜨린 도메인이 보이지 않는다.** 분류 안 된 548개를 열어 보니 언어·런타임(`golang/go`, `TypeScript`, `deno`), 유틸리티(`lodash`, `date-fns`, `zod`), 데브옵스(`act`, `sentry`)가 통째로 들어 있었다. 그 셋을 더하면 커버리지가 76.6% → 88.9% 로 뛴다. 이름 붙인 것만 보이므로 빠뜨린 건 끝까지 안 보인다.
-- **낡는다.** 2016~2020년 별표는 약 80%가 걸리는데 2026년 별표는 70.9%다. 컬렉션은 계속 움직이고 키워드 목록은 쓴 시점에 멈춰 있다.
-- **물량이 많은 자리의 정밀도가 나쁘다.** `native` 는 native 도메인 287건 중 88건을 혼자 물어오는데, 표본을 보면 `micromatch`·`lingui`·`react-hook-form` 이 섞여 있다. `api` 도 server 417건 중 128건인데 Web Audio 튜토리얼이 들어온다. 일반 영어 단어라서 그렇다.
-- **안 쓰는 키워드가 있다.** 288개 중 15개는 한 번도 안 걸린다. `langchain`, `emacs`, `jasmine` — 그럴듯해서 적었지만 이 컬렉션에 없다.
-- **틀린 걸 알아챌 방법이 없다.** 어떤 저장소가 잘못 들어갔는지 알려주는 게 아무것도 없다. 위의 것들도 일부러 재 보고 나서야 알았다.
-
-가장 나빴던 건 스펙트럼이다. 분류된 1,796개 중 817개가 두 개 이상 도메인에 걸리고 대표는 `CATEGORIES` 배열 순서로 갈리는데, 화면은 그걸 "대표 도메인 분포"라는 측정값처럼 보여줬다. 우리 배열 순서를 사실처럼 그린 셈이다.
-
-애매한 저장소를 어디에 넣을지는 사람이 사흘을 봐도 쉽게 정하지 못한다. 그런 판단을 미리 굳혀 두고 맞는지 확인할 길까지 없으면 남는 건 측정값처럼 보이는 추측이다. GitHub 의 언어·토픽은 우리 것이 아니지만 적어도 우리가 지어낸 것이 아니고, 스펙트럼은 언어로 바꾸면서 처음으로 진짜 파티션이 됐다.
-
-분류가 있어야 답할 수 있는 질문이 생기면 그때 만든다. 미리가 아니라.
+- 단어 경계는 GLOB 문자 클래스로 건다: `'*[^a-z0-9]ai[^a-z0-9]*'`. 키워드 안의 공백도 같은 클래스가 되어 `react native` 가 `react-native`·`react_native` 를 함께 잡는다. 끝에 `*` 를 붙이면 접두 매칭이다.
+- `CATEGORIES` 배열 순서가 우선순위다. 좁은 도메인을 앞에 둔다.
+- 키워드를 고치면 `make-views.ts` 만 다시 돌린다. 재동기화는 필요 없다.
 
 ## 예시 질의
 
-`core/sql/views.sql` 적용 후. 별표를 누른 해별로 언어 비중이 어떻게 움직였는지:
+`core/sql/views.sql` 적용 후. 해별 언어 비중:
 
 ```sql
 WITH y AS (SELECT strftime('%Y', starred_at) AS yr, language FROM starred WHERE language IS NOT NULL)
@@ -218,14 +134,7 @@ SELECT yr, count(*) AS n,
 FROM y GROUP BY yr HAVING n > 30 ORDER BY yr;
 ```
 
-```
-2016   62   19.4   46.8
-2019  250   33.2   44.8
-2022  205   50.7   29.8
-2026  197   53.8    8.1
-```
-
-별표는 눌렀는데 그 뒤로 죽은 저장소:
+별표 이후 멈춘 저장소:
 
 ```sql
 SELECT full_name, language, stars, last_push
@@ -234,7 +143,7 @@ WHERE archived OR last_push < date('now', '-4 years')
 ORDER BY stars DESC;
 ```
 
-토픽 분포는 `topic` 뷰가 `json_each` 로 배열을 펴 둔다.
+토픽 분포:
 
 ```sql
 SELECT topic, count(*) n FROM topic GROUP BY 1 ORDER BY n DESC LIMIT 20;
@@ -242,66 +151,40 @@ SELECT topic, count(*) n FROM topic GROUP BY 1 ORDER BY n DESC LIMIT 20;
 
 ## 테스트 픽스처
 
-네트워크 없이 확인하려면 합성 목록을 만든다. `make-fixture.ts` 가 URL 템플릿까지 실제 응답과 같은 모양으로 repo 5개를 찍는다.
+`make-fixture.ts` 가 실제 응답과 같은 모양의 repo 5개를 만든다. `--from` 은 파일을 목록 전체로 보고 전체 동기화로 취급한다.
 
 ```bash
 cd core
 node make-fixture.ts
 node src/cli.ts test.db --from fixture.json
-```
-
-`--from` 은 파일이 목록 전체라고 보고 전체 동기화로 취급하므로, 항목을 지운 파일로 다시 돌리면 언스타 판정까지 확인된다.
-
-```bash
 jq '.[0:3]' fixture.json > less.json
 node src/cli.ts test.db --from less.json    # 언스타 2
 node src/cli.ts test.db --from fixture.json # 신규 2 (재스타), first_sync 는 보존
 ```
 
-## web — RSC 로 stars.db 직접 읽기
+## web
 
-`web/` 는 Next 앱이고, 커밋된 `stars.db` 를 RSC 에서 `node:sqlite` 로 직접 질의한다. Turso 같은 원격도, 정적 JSON 주입도 없다 — 파일을 그대로 읽는다. 상태는 URL(`?q &lang &topic &sort`)이 갖고, 클라이언트 컴포넌트는 `router.replace` 로 URL 만 갱신한다. 검색·언어·토픽 필터는 전부 SQL 에서 좁힌다 — 행을 다 읽어와 JS 에서 거르지 않는다.
+Next 앱이 커밋된 `stars.db` 를 RSC 에서 `node:sqlite` 로 직접 질의한다.
 
-화면이 쓰는 축은 **GitHub 이 갖고 있는 것 둘**이다. 스펙트럼 막대는 언어 분포(repo 당 0 또는 1개라 겹치지 않는다), 칩은 실제로 달려 있는 토픽 상위 20개다. 언어 이름과 같은 토픽은 칩에서 뺀다 — `javascript` 칩과 JavaScript 언어 필터가 같은 자리를 두고 다투기 때문이다. 이름 비교뿐이라 판단이 들어가지 않는다.
+- 상태는 URL(`?q &lang &topic &sort`)에 둔다. 클라이언트 컴포넌트는 `router.replace` 로 URL 만 바꾸고, 필터는 전부 SQL 에서 건다.
+- 스펙트럼 막대는 언어 분포, 칩은 토픽 상위 20개다. 언어 이름과 같은 토픽은 칩에서 뺀다.
+- UI 는 [Astryx](https://github.com/facebook/astryx) 로 짰다. `web/app/globals.css` 는 `@import` 세 줄뿐이고 색·간격·타이포는 `theme-neutral` 토큰에서 온다. 예외로 `web/app/spectrum.tsx` 는 `style` + `var(--color-*)` 로 직접 칠한다.
+- DB 는 core 의 `openDb(path, { readonly: true })` 로 열고, `web/lib/db.ts` 가 모듈 싱글턴으로 재사용한다.
 
-화면은 [Astryx](https://github.com/facebook/astryx) 로 짰다. 앱 CSS 는 없다 — `web/app/globals.css` 는 reset·컴포넌트·테마 세 줄의 `@import` 뿐이고, 색·간격·타이포는 전부 `theme-neutral` 의 토큰에서 온다. 폰트도 테마가 갖고 있어 웹폰트 요청이 없다.
+Vercel 배포 설정 (`next.config.ts`):
 
-예외가 하나 있다. 스펙트럼 막대(`web/app/spectrum.tsx`)는 비율로 늘어나는 막대에 맞는 컴포넌트가 없어 DOM 을 직접 쓴다. 이 앱에는 StyleX 컴파일러가 없어 `xstyle` 도 못 쓰므로 `style` + `var(--color-*)` 로만 칠한다. raw hex 나 px 은 넣지 않는다.
-
-읽기 열기 로직(`immutable=1` 읽기 전용)은 core 의 `openDb(path, { readonly: true })` 하나이고, web 은 그걸 import 해 경로만 준다. `web/lib/db.ts` 가 모듈 스코프 싱글턴으로 감싸 웜 인보케이션에서 재사용한다.
-
-배포 대상은 Vercel 이다. 함수 번들에 `stars.db` 를 넣기 위해 `next.config.ts` 가 `outputFileTracingIncludes` 로 명시하고(import 되지 않는 바이너리라 트레이싱이 자동으로 잡지 못한다), `transpilePackages: ['@stars/core']` 로 core 의 `.ts` 를 Next 가 컴파일하게 한다.
-
-모노레포라 루트 설정 둘을 저장소 루트로 못박는다. `outputFileTracingRoot` 는 pnpm 의 `.pnpm` 스토어와 워크스페이스 심링크가 전부 루트 아래 있으므로 그 위에서 트레이스해야 완결된다. `turbopack.root` 는 Next 16 에서 필수다 — Turbopack 이 빌드 기본값인데 프로젝트 루트를 명시하지 않으면 `next build` 와 `next start` 가 RSC 클라이언트 매니페스트 경로를 다르게 잡아 런타임이 통째로 빈 페이지가 된다(`Could not find … in the React Client Manifest`).
-
-이 경로는 [cbcruk/omoji](https://github.com/cbcruk/omoji) 가 한 번 좌초해 Turso 로 우회했던 길이다. 차이는 바인딩 하나다: omoji 는 `better-sqlite3`(네이티브)였고, 여기는 `node:sqlite`(무바인딩, Node 24 stable)를 쓴다. 네이티브 컴파일이 없어 환경을 타지 않는다.
+| 설정 | 이유 |
+| --- | --- |
+| `outputFileTracingIncludes` | import 되지 않는 `stars.db` 를 함수 번들에 넣는다 |
+| `transpilePackages: ['@stars/core']` | core 의 `.ts` 를 Next 가 컴파일한다 |
+| `outputFileTracingRoot` | pnpm 스토어와 워크스페이스 심링크가 루트 아래 있다 |
+| `turbopack.root` | 없으면 `next start` 가 RSC 매니페스트를 못 찾아 빈 페이지가 된다 |
 
 ## node:sqlite 주의
 
-`bun:sqlite`/`better-sqlite3` 에서 옮겨올 때 걸리는 곳이 셋 있다.
-
-`db.transaction()` 헬퍼가 없다. `BEGIN`/`COMMIT`/`ROLLBACK` 을 직접 건다(`core/src/db.ts` 의 `tx()`). `prepare` 는 제네릭 타입을 받지 않으므로 결과는 캐스팅한다. 없는 row 는 `undefined` 다.
-
-```ts
-const prev = find.get(repoId) as PrevRow | undefined
-```
-
-그리고 `.all()`/`.get()` 은 **null-prototype 객체**를 돌려준다. RSC 에서 이 값을 클라이언트 컴포넌트로 넘기면 직렬화가 막히므로, 넘기기 전에 `.map(r => ({ ...r }))` 로 평범한 객체로 바꾼다. SQL 문자열 리터럴은 홑따옴표로 — `node:sqlite` 는 큰따옴표를 컬럼명으로 해석한다.
-
-`foreign_keys` 는 `DatabaseSync` 가 기본으로 켜므로 따로 걸 필요가 없다. `journal_mode`/`synchronous` 는 기본값이 아니라 직접 걸어야 한다.
-
-### 아직 부딪히지 않은 것들
-
-[fit-to-sqlite](https://github.com/cbcruk/fit-to-sqlite) 가 같은 바인딩 위에서 먼저 밟은 것들이다.
-
-바인딩 가능한 값은 `null`/number/bigint/string/`Uint8Array` 뿐이다. **boolean 은 던진다** — 플래그 컬럼은 `1`/`0` 으로 넣어야 한다. 이 저장소는 `ok`/`gone` 을 이미 정수로 다루고 있어서 지금은 걸리지 않는다.
-
-`run()` 의 `{ changes, lastInsertRowid }` 는 bigint 가 아니라 number 로 온다. `Number()` 로 감싸는 건 방어일 뿐 필요해서가 아니다.
-
-써드파티 SDK 의 콜백 안에서 INSERT 하는 구조라면, 그 SDK 가 콜백 예외를 삼키는지 확인해야 한다. 삼키면 쓰기 실패가 조용히 커밋된다. 이 저장소의 적재는 자기 루프 안에서 도므로 해당되지 않는다.
-
-## 범위에 대한 미결
-
-- **README 본문 수집.** 별표 목록 API 는 설명과 토픽까지만 준다. README 를 가져오면 전문 검색이 되지만 repo 당 요청 1회(2,344회)에 FTS5 인덱스가 붙고, 그건 적재라기보다 수집이다. 어디까지가 이 저장소의 일인지 정하지 않았다.
-- **삭제·비공개 전환된 repo.** 지금은 목록에서 사라지므로 언스타와 구분되지 않는다. `/repositories/{id}` 로 404 인지 확인하면 갈라낼 수 있는데, 언스타 건수가 쌓이기 전에는 판단할 근거가 없다.
-- **`gone` 판정의 오탐 창.** 전체 동기화 도중 별표를 빼면 페이지가 밀려 무관한 repo 하나가 누락될 수 있고, 그 repo 는 그 회차에 언스타로 잡힌다. 다음 동기화에서 자동 복구되지만(`unstarred_sync` 가 `NULL` 로 돌아온다) `unstarred` 뷰에 잠깐 뜬다. 동기화 전후로 `starred_at` 최대값을 비교해 목록이 움직였는지 감지하는 안이 있는데, 실제로 부딪히기 전까지는 두고 본다.
+- `db.transaction()` 이 없다. `core/src/db.ts` 의 `tx()` 가 `BEGIN`/`COMMIT`/`ROLLBACK` 을 건다.
+- `prepare` 는 제네릭을 받지 않으므로 결과를 캐스팅한다. 없는 row 는 `undefined` 다.
+- `.all()`/`.get()` 은 null-prototype 객체를 돌려준다. 클라이언트 컴포넌트로 넘기기 전에 `{ ...r }` 로 펴야 직렬화된다.
+- SQL 문자열 리터럴은 홑따옴표로 쓴다. 큰따옴표는 컬럼명으로 해석된다.
+- boolean 은 바인딩할 수 없다. 플래그는 `1`/`0` 으로 넣는다.
+- `foreign_keys` 는 기본으로 켜져 있고, `journal_mode`/`synchronous` 는 직접 건다.
