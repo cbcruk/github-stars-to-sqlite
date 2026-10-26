@@ -170,6 +170,17 @@ Next 앱이 커밋된 `stars.db` 를 RSC 에서 `node:sqlite` 로 직접 질의�
 - 스펙트럼 막대는 언어 분포, 칩은 토픽 상위 20개다. 언어 이름과 같은 토픽은 칩에서 뺀다.
 - UI 는 [Astryx](https://github.com/facebook/astryx) 로 짰다. `web/app/globals.css` 는 `@import` 세 줄뿐이고 색·간격·타이포는 `theme-neutral` 토큰에서 온다. 예외로 `web/app/spectrum.tsx` 는 `style` + `var(--color-*)` 로 직접 칠한다.
 - DB 는 core 의 `openDb(path, { readonly: true })` 로 열고, `web/lib/db.ts` 가 모듈 싱글턴으로 재사용한다.
+- 질의는 `web/queries/*.sql` 에 있고 [reylo](https://github.com/colinhacks/reylo) 로 import 한다. 행 타입은 손으로 쓰지 않는다 — 아래 [쿼리 타입](#쿼리-타입-reylo).
+
+### 쿼리 타입 (reylo)
+
+reylo 가 `stars.db` 에 쿼리를 prepare 해서 컬럼·파라미터 타입을 읽는다. 타입 체크(`pnpm --filter @stars/web typecheck`)와 `next build` 둘 다 이 파일이 있어야 돈다. 경로는 `web/.env` 의 `DATABASE_URL=file:../stars.db` 다.
+
+- **타입은 `views.sql` 이 아니라 db 에 걸린 뷰에서 나온다.** 뷰를 고치면 `node core/make-views.ts ./stars.db` 로 다시 적용해야 타입이 따라온다. 스크립트는 `views.sql` 의 뷰를 전부 떨어뜨리고 다시 만든다.
+- **`json_extract`·`json_each` 는 `unknown` 이다.** 화면이 읽는 뷰 컬럼은 `CAST(... AS TEXT/INTEGER)` 로 감싼다.
+- **파라미터는 쿼리당 한 번만 쓴다.** 여러 번 읽을 값은 `WITH raw AS (SELECT :q::text AS q)` 로 받아 쓴다. `search.sql` 과 `matches.sql` 은 같은 조건을 복사해서 갖는다.
+- **뷰와 컬럼 이름이 같으면 한정한다.** `SELECT topic FROM topic` 은 `unknown`, `SELECT t.topic FROM topic t` 는 `string` 이다.
+- TypeScript 7.1 beta 가 필요하다. 에디터에서 타입을 보려면 `TypeScriptTeam.native-preview` 확장과 `js/ts.experimental.useTsgo` 가 필요하다. core 는 reylo 를 쓰지 않는다.
 
 Vercel 배포 설정 (`next.config.ts`):
 
@@ -183,7 +194,7 @@ Vercel 배포 설정 (`next.config.ts`):
 ## node:sqlite 주의
 
 - `db.transaction()` 이 없다. `core/src/db.ts` 의 `tx()` 가 `BEGIN`/`COMMIT`/`ROLLBACK` 을 건다.
-- `prepare` 는 제네릭을 받지 않으므로 결과를 캐스팅한다. 없는 row 는 `undefined` 다.
+- `prepare` 는 제네릭을 받지 않으므로 결과를 캐스팅한다. 없는 row 는 `undefined` 다. (core 만 해당. web 은 reylo 가 타입을 준다)
 - `.all()`/`.get()` 은 null-prototype 객체를 돌려준다. 클라이언트 컴포넌트로 넘기기 전에 `{ ...r }` 로 펴야 직렬화된다.
 - SQL 문자열 리터럴은 홑따옴표로 쓴다. 큰따옴표는 컬럼명으로 해석된다.
 - boolean 은 바인딩할 수 없다. 플래그는 `1`/`0` 으로 넣는다.

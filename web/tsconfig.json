@@ -38,5 +38,15 @@
   ],
   "exclude": [
     "node_modules"
+  ],
+  "contentMappers": [
+    {
+      "package": "reylo",
+      "extensions": [
+        ".sql",
+        ".reylo.yaml",
+        ".reylo.yml"
+      ]
+    }
   ]
 }

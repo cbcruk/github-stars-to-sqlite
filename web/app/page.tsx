@@ -37,17 +37,20 @@ function stars(n: number): string {
 }
 
 function RepoCard({ repo, hue }: { repo: Repo; hue: Hue | undefined }) {
-  const name = repo.full_name.slice(repo.owner.length + 1)
+  // owner 는 JSON 에서 꺼낸 값이라 null 일 수 있다. full_name 이 'owner/name' 이므로 거기서 나눈다.
+  const slash = repo.full_name.indexOf('/')
+  const owner = repo.full_name.slice(0, slash)
+  const name = repo.full_name.slice(slash + 1)
   return (
     <ClickableCard href={repo.url} target="_blank" label={repo.full_name} padding={4}>
       <VStack gap={2} height="100%">
         <HStack gap={3} justify="between" align="start">
           <Text weight="semibold" wordBreak="break-word">
-            <Text color="secondary">{repo.owner}/</Text>
+            <Text color="secondary">{owner}/</Text>
             {name}
           </Text>
           <Text type="supporting" hasTabularNumbers textWrap="nowrap">
-            ★ {stars(repo.stars)}
+            ★ {stars(repo.stars ?? 0)}
           </Text>
         </HStack>
 
