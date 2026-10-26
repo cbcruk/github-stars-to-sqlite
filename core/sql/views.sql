@@ -9,17 +9,17 @@ SELECT
   s.full_name,
   'https://github.com/' || s.full_name              AS url,
   datetime(s.starred_at, 'unixepoch')               AS starred_at,
-  json_extract(s.data, '$.owner.login')             AS owner,
-  json_extract(s.data, '$.description')             AS description,
-  json_extract(s.data, '$.language')                AS language,
-  json_extract(s.data, '$.stargazers_count')        AS stars,
-  json_extract(s.data, '$.forks_count')             AS forks,
-  json_extract(s.data, '$.open_issues_count')       AS open_issues,
-  json_extract(s.data, '$.license.spdx_id')         AS license,
-  json_extract(s.data, '$.homepage')                AS homepage,
-  json_extract(s.data, '$.archived')                AS archived,
-  json_extract(s.data, '$.fork')                    AS is_fork,
-  json_extract(s.data, '$.size')                    AS size_kb,
+  CAST(json_extract(s.data, '$.owner.login') AS TEXT) AS owner,
+  CAST(json_extract(s.data, '$.description') AS TEXT) AS description,
+  CAST(json_extract(s.data, '$.language') AS TEXT)  AS language,
+  CAST(json_extract(s.data, '$.stargazers_count') AS INTEGER) AS stars,
+  CAST(json_extract(s.data, '$.forks_count') AS INTEGER) AS forks,
+  CAST(json_extract(s.data, '$.open_issues_count') AS INTEGER) AS open_issues,
+  CAST(json_extract(s.data, '$.license.spdx_id') AS TEXT) AS license,
+  CAST(json_extract(s.data, '$.homepage') AS TEXT)  AS homepage,
+  CAST(json_extract(s.data, '$.archived') AS INTEGER) AS archived,
+  CAST(json_extract(s.data, '$.fork') AS INTEGER)   AS is_fork,
+  CAST(json_extract(s.data, '$.size') AS INTEGER)   AS size_kb,
   date(json_extract(s.data, '$.created_at'))        AS repo_created,
   date(json_extract(s.data, '$.pushed_at'))         AS last_push,
   s.first_sync,
@@ -45,7 +45,7 @@ CREATE VIEW IF NOT EXISTS topic AS
 SELECT
   s.repo_id,
   s.full_name,
-  j.value AS topic
+  CAST(j.value AS TEXT) AS topic
 FROM star s, json_each(s.data, '$.topics') j
 WHERE s.unstarred_sync IS NULL;
 

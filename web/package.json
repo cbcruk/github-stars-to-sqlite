@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "node scripts/copy-db.mjs && next dev",
     "build": "node scripts/copy-db.mjs && next build",
-    "start": "next start"
+    "start": "next start",
+    "typecheck": "tsc --noEmit --runExternalCode"
   },
   "dependencies": {
     "@astryxdesign/core": "^0.5.4",
@@ -14,14 +15,16 @@
     "@stylexjs/stylex": "^0.19.0",
     "next": "16.3.4",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "reylo": "0.5.0"
   },
   "devDependencies": {
     "@astryxdesign/cli": "^0.5.4",
+    "@reylosql/sqlite": "0.5.0",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "typescript": "^5"
+    "typescript": "7.1.0-beta"
   },
   "astryx": {
     "theme": "neutral"

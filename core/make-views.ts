@@ -28,10 +28,13 @@ console.log(`views.sql 갱신 — 분류 뷰 ${next.length}B`)
 
 const dbPath = process.argv[2]
 if (dbPath) {
-  // 생성 구간은 CREATE VIEW IF NOT EXISTS 라 이미 있으면 조용히 지나간다.
-  // 정의가 바뀌었을 수 있으므로 분류 뷰는 먼저 떨어뜨리고 다시 만든다.
+  // CREATE VIEW IF NOT EXISTS 는 이미 있으면 조용히 지나간다. web 의 쿼리 타입은
+  // views.sql 이 아니라 db 에 걸린 뷰에서 추론되므로(reylo), 파일의 뷰를 전부
+  // 떨어뜨리고 다시 만들어 db 를 views.sql 과 똑같이 맞춘다. 뒤에 정의된 뷰가
+  // 앞의 뷰를 참조할 수 있어 역순으로 떨어뜨린다.
   const db = new DatabaseSync(dbPath)
-  for (const v of ['repo_primary_category', 'repo_match', 'repo_text']) {
+  const views = [...next.matchAll(/CREATE VIEW IF NOT EXISTS (\w+)/g)].map((m) => m[1])
+  for (const v of views.reverse()) {
     db.exec(`DROP VIEW IF EXISTS ${v}`)
   }
   db.exec(next)

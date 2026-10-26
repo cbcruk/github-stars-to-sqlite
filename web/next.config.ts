@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next'
+import { withReylo } from 'reylo/next'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { networkInterfaces, type NetworkInterfaceInfo } from 'node:os'
@@ -44,4 +45,5 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+// .sql 파일을 서버 전용 모듈로 바꾸고, next build 의 타입 체크를 --runExternalCode 로 돌린다.
+export default withReylo(nextConfig)
