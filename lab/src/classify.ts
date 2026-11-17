@@ -47,7 +47,7 @@ const ClassificationSchema = z.object({
 export function classify(repo: RepoInput, metadata: Record<string, unknown> = {}): Promise<Classification> {
   return startActiveObservation('classify-repo', async (span) => {
     span.update({ input: repo, metadata })
-    const content = await generate(
+    const { content } = await generate(
       'llm',
       CLASSIFY_PROMPT,
       { categories: categoryList(), repo: JSON.stringify(repo) },

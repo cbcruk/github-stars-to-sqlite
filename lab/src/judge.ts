@@ -62,7 +62,7 @@ export function judge(repo: RepoInput, expected: TagAnswer, predicted: TagAnswer
   }
   return startActiveObservation('judge-tags', async (span) => {
     span.update({ input: { repo: repo.fullName, expected, predicted } })
-    const content = await generate(
+    const { content } = await generate(
       'judge',
       JUDGE_PROMPT,
       { repo: JSON.stringify(repo), expected: JSON.stringify(expected), predicted: JSON.stringify(predicted) },
