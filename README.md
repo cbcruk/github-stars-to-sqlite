@@ -6,6 +6,7 @@ GitHub 별표를 SQLite 파일 하나에 적재하고, 그 위에서 검색한�
 github-stars-to-sqlite/     # pnpm workspaces
 ├─ core/     CLI + 적재 — GitHub → stars.db. 런타임 의존성 없음
 ├─ web/      Next 앱 — stars.db 를 RSC 에서 직접 읽는 검색 뷰
+├─ lab/      분석용 실험 — Langfuse 로 키워드 분류와 LLM 분류를 채점한다 (SPEC B10)
 └─ stars.db  스냅샷 (커밋됨). core 가 쓰고, web 이 읽는다
 ```
 

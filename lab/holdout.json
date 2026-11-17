@@ -1,0 +1,218 @@
+[
+  {
+    "repo": "Rob--W/cors-anywhere",
+    "group": "seen",
+    "stratum": "keyword-single",
+    "traceId": "d310b10ec6db420804f4e82299502ab6"
+  },
+  {
+    "repo": "ianstormtaylor/react-values",
+    "group": "new",
+    "stratum": "keyword-single",
+    "traceId": "480a2f057bd6b1a113b92440cc8e6349"
+  },
+  {
+    "repo": "image-size/image-size",
+    "group": "new",
+    "stratum": "keyword-none",
+    "traceId": "734f7d1642b79d0574de588a3b028e1a"
+  },
+  {
+    "repo": "typicode/json-server",
+    "group": "new",
+    "stratum": "keyword-multi",
+    "traceId": "d7b27887bdccf7117501ee3e70a58370"
+  },
+  {
+    "repo": "expressjs/multer",
+    "group": "new",
+    "stratum": "keyword-multi",
+    "traceId": "620a2982e6fea67e97f13426a518f9a8"
+  },
+  {
+    "repo": "akxcv/vuera",
+    "group": "new",
+    "stratum": "keyword-multi",
+    "traceId": "88bedb9e64a464fd0d6007c2bba015a4"
+  },
+  {
+    "repo": "exceljs/exceljs",
+    "group": "new",
+    "stratum": "keyword-none",
+    "traceId": "d057285f8725cb537adcfa5bf23f421f"
+  },
+  {
+    "repo": "esm-dev/esm.sh",
+    "group": "seen",
+    "stratum": "keyword-none",
+    "traceId": "72b066148ab83308891980e25ecc92ba"
+  },
+  {
+    "repo": "HelloCSV/HelloCSV",
+    "group": "new",
+    "stratum": "keyword-single",
+    "traceId": "d56359b7671943e563558da232267c6c"
+  },
+  {
+    "repo": "supermacro/neverthrow",
+    "group": "new",
+    "stratum": "keyword-none",
+    "traceId": "91ae529cc65aa57e40c6822e34139365"
+  },
+  {
+    "repo": "zalmoxisus/redux-devtools-extension",
+    "group": "seen",
+    "stratum": "keyword-none",
+    "traceId": "e7b7413f48a47651a8a1d20fbcf2ceb9"
+  },
+  {
+    "repo": "LegendApp/legend-state",
+    "group": "new",
+    "stratum": "keyword-none",
+    "traceId": "e26384bba274788a5d2a883a38e22f8f"
+  },
+  {
+    "repo": "vuejs/vue-test-utils",
+    "group": "seen",
+    "stratum": "keyword-multi",
+    "traceId": "52ccfedb84cfc796722463488dfa38f6"
+  },
+  {
+    "repo": "google/web-starter-kit",
+    "group": "seen",
+    "stratum": "keyword-single",
+    "traceId": "e1c9216a89bb5a0ed046a57098c9ed82"
+  },
+  {
+    "repo": "mswjs/msw",
+    "group": "seen",
+    "stratum": "keyword-multi",
+    "traceId": "2656b87efd0f90ee65e9cf7dc0535ab1"
+  },
+  {
+    "repo": "acdlite/recompose",
+    "group": "new",
+    "stratum": "keyword-single",
+    "traceId": "273def4fdb1cf86d5cc9594188cb181e"
+  },
+  {
+    "repo": "roc-lang/roc",
+    "group": "new",
+    "stratum": "keyword-none",
+    "traceId": "842b468961fe94d665374b01fb097fff"
+  },
+  {
+    "repo": "prettier/prettier",
+    "group": "new",
+    "stratum": "keyword-multi",
+    "traceId": "626b45572d87d2077896ea6e11fd2689"
+  },
+  {
+    "repo": "fathyb/html2svg",
+    "group": "seen",
+    "stratum": "keyword-single",
+    "traceId": "a90e269d7eae672bc2457e2b996cbe4b"
+  },
+  {
+    "repo": "achtaitaipai/odyc",
+    "group": "new",
+    "stratum": "keyword-none",
+    "traceId": "21e233329f834f66c7e8bcf3887cbfa0"
+  },
+  {
+    "repo": "poppinss/youch",
+    "group": "new",
+    "stratum": "keyword-single",
+    "traceId": "7e1d6e5ff354549cc07bdc9a9da7155d"
+  },
+  {
+    "repo": "tinyplex/tinybase",
+    "group": "new",
+    "stratum": "keyword-single",
+    "traceId": "dd1739b81f36df3e1e26c5b8b22cc566"
+  },
+  {
+    "repo": "mholt/PapaParse",
+    "group": "new",
+    "stratum": "keyword-none",
+    "traceId": "6bf2b3ec50a8cdf14be252e13745f258"
+  },
+  {
+    "repo": "pmndrs/use-gesture",
+    "group": "seen",
+    "stratum": "keyword-single",
+    "traceId": "7e0d0ee662f21410ac725d615ddf9b26"
+  },
+  {
+    "repo": "h5bp/html5-boilerplate",
+    "group": "new",
+    "stratum": "keyword-multi",
+    "traceId": "7881a5ceef8c82f79783d4014e171c6c"
+  },
+  {
+    "repo": "TanStack/table",
+    "group": "new",
+    "stratum": "keyword-single",
+    "traceId": "09d477a485fa59260a73550c0e791903"
+  },
+  {
+    "repo": "remix-run/remix",
+    "group": "seen",
+    "stratum": "keyword-none",
+    "traceId": "ea9424efd88ab950eaa5bdb16dbd7abf"
+  },
+  {
+    "repo": "shuding/better-all",
+    "group": "seen",
+    "stratum": "keyword-none",
+    "traceId": "2fdcb77d3d246fdcc2e975a06c3f5327"
+  },
+  {
+    "repo": "timarney/react-app-rewired",
+    "group": "new",
+    "stratum": "keyword-multi",
+    "traceId": "4a3e6092caa37403054f9242f3709452"
+  },
+  {
+    "repo": "redwoodjs/sdk",
+    "group": "seen",
+    "stratum": "keyword-multi",
+    "traceId": "318909a2e91593adb6fdcadc0a2188ab"
+  },
+  {
+    "repo": "typescript-cheatsheets/react",
+    "group": "new",
+    "stratum": "keyword-multi",
+    "traceId": "5c1c97d3da5008415f2cfbb28830f61a"
+  },
+  {
+    "repo": "NotionX/react-notion-x",
+    "group": "seen",
+    "stratum": "keyword-multi",
+    "traceId": "f7b3a37397610a5d3c9b48b88680205a"
+  },
+  {
+    "repo": "reduxjs/redux-toolkit",
+    "group": "new",
+    "stratum": "keyword-none",
+    "traceId": "64352e043837cbed2378eefe0e079a2a"
+  },
+  {
+    "repo": "lovell/sharp",
+    "group": "new",
+    "stratum": "keyword-single",
+    "traceId": "50d441ec8a5684144ff8152ab7d860e4"
+  },
+  {
+    "repo": "rxhanson/Rectangle",
+    "group": "new",
+    "stratum": "keyword-single",
+    "traceId": "b20290bef2e89d11372bc6effd083471"
+  },
+  {
+    "repo": "animate-css/animate.css",
+    "group": "new",
+    "stratum": "keyword-multi",
+    "traceId": "7397e28129b89c35dbdced0378a57715"
+  }
+]

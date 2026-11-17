@@ -1,6 +1,8 @@
 packages:
   - core
   - web
+  - lab
 allowBuilds:
   '@astryxdesign/cli': false
   '@astryxdesign/core': false
+  protobufjs: false
