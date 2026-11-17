@@ -246,6 +246,7 @@
 ```bash
 pnpm --filter @stars/core sync
 node core/make-views.ts ./stars.db          # 분석용 분류에 새 repo 반영
+(cd lab && LLM_MODEL=claude-haiku-5-5 node --env-file=.env src/write-tags.ts ../stars.db)  # 새 repo 태그 (B11, 선택)
 sqlite3 stars.db 'PRAGMA wal_checkpoint(TRUNCATE); VACUUM;'
 git commit -am "stars 스냅샷 갱신"
 ```
@@ -286,6 +287,7 @@ node src/cli.ts test.db --from fixture.json
 | `repo_match` | 분류 규칙 (느리다, 정의용) |
 | `repo_category` | 굳힌 분류 (표, 인덱스 있음) |
 | `repo_primary_category` | 대표 도메인 |
+| `repo_tag` · `repo_tag_run` | LLM 이 붙인 태그와 그 출처 (B11) |
 
 **확인** — `sqlite3` CLI 로 스키마가 읽혀야 한다. 뷰 정의가 파서 스택을 넘기면
 (`parser stack overflow`) node:sqlite 는 넘어가도 CLI 는 통째로 막힌다. 이 조건은
@@ -299,7 +301,7 @@ sqlite3 stars.db "SELECT name FROM sqlite_master WHERE type IN ('view','table')"
 
 **상황** — 키워드 분류가 얼마나 틀리는지, LLM 이 그보다 나은지 숫자로 알고 싶다.
 「분류를 왜 안 만들었나」의 마지막 이유 — 틀린 걸 알아챌 방법이 없었다 — 를 메우는 도구다.
-**화면은 바뀌지 않는다.** 결과는 [Langfuse](https://langfuse.com) 에만 남고 `stars.db` 에 쓰지 않는다.
+**화면은 바뀌지 않는다.** 실험 결과는 [Langfuse](https://langfuse.com) 에만 남는다. `stars.db` 에 굳히는 건 B11 이다.
 
 **동작** — `lab/` 에서 한다. 자세한 절차는 [lab/README.md](./lab/README.md).
 
@@ -326,6 +328,35 @@ node --env-file=.env src/experiment.ts ../stars.db --task llm --name llm-v1
 태그 실험(`stars-tags`, LLM-as-a-judge 채점)을 더했다 — [lab/README.md](./lab/README.md#태그-실험-stars-tags).
 처음 보는 저장소 24건을 사람이 매겨 보니 태그 프롬프트 v3 의 출력은 92% 가 "좋음"이었다.
 
+## B11. LLM 태그를 굳힌다 (분석용)
+
+**상황** — B10 의 태그가 쓸 만하다는 숫자가 나왔다. `sqlite3` 로 "태그 X 가 붙은 별표"를 물을 수 있게
+`stars.db` 에 남긴다. B6 의 `repo_category` 와 같은 자리다. **화면은 이 태그를 읽지 않는다.**
+
+**동작** — 동기화 뒤, 접기 전에 돌린다. 아직 안 붙인 저장소만 붙인다.
+
+```bash
+cd lab
+LLM_MODEL=claude-haiku-5-5 node --env-file=.env src/write-tags.ts ../stars.db
+```
+
+| 표 | 내용 |
+| --- | --- |
+| `repo_tag(repo_id, tag, is_primary)` | 저장소당 1~3개. `is_primary` 는 대표 하나 |
+| `repo_tag_run(repo_id, prompt_version, model, tagged_at)` | 어느 프롬프트 버전·모델로 붙였나 |
+
+**확인**
+
+- 붙인 것·실패한 것 수가 찍힌다. 끊기거나 실패해도 다시 돌리면 남은 것만 붙는다(저장소 하나씩 커밋)
+- 프롬프트는 Langfuse 의 production `stars-tag` 다. 거기에 닿지 못해 로컬 fallback 이 쓰이면 쓰지 않고 실패로 센다
+- 프롬프트를 고쳐 production 을 올렸으면 `--refresh` 로 옛 버전 것을 다시 붙인다
+- 모델은 Haiku 다. `stars-tags` 에서 Opus 와 judge F1 이 같고(0.610 / 0.625) 값이 1/30 이다(저장소당 $0.0002)
+- 언스타한 저장소의 태그는 지우지 않는다. 질의할 때 `starred` 와 조인한다
+- 처음 굳힌 결과 (2026-11-17, stars-tag v3, Haiku): 2,344개 전부, 실패 0, 저장소당 1.98개, 서로 다른 태그 1,751개 중 1,135개(65%)는 한 번만 쓰였다.
+  많은 순: `react` 223, `css` 93, `vue` 52, `ui` 49, `typescript` 46. 태그 하나로 묻는 질의는 0.1ms
+- 「분류를 왜 안 만들었나」와 부딪히지 않는다: 화면에 올리지 않고, 틀린 걸 재는 방법(B10)이 함께 있다
+
+
 ---
 
 # 성능 기준
@@ -338,7 +369,7 @@ node --env-file=.env src/experiment.ts ../stars.db --task llm --name llm-v1
 | 분류 집계 질의 (분석용) | 10ms 안쪽 | 굳힌 표 3ms. 규칙 뷰로 직접 재면 2초 |
 | 전체 동기화 | 24요청 / 60초 | 별표 2,344개 기준 |
 | 증분 동기화 | 1요청 / 2.5초 | |
-| `stars.db` | 5MB 안쪽 | 현재 4.70MB |
+| `stars.db` | 5MB 안쪽 | 현재 4.73MB (`repo_tag` 포함) |
 
 분류 집계가 느려졌다면 `repo_category` 가 표가 아니라 뷰로 돌아갔는지 먼저 본다.
 

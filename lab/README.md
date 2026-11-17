@@ -19,7 +19,9 @@ src/
 ├─ push-prompt.ts      로컬 프롬프트 → Langfuse 새 버전 (production)
 ├─ sync-dataset.ts     labels.json → 데이터셋 stars-labels (--kind tags 면 stars-tags)
 ├─ experiment.ts       stars-labels 에 keyword / llm 실행 + 채점
-└─ tag-experiment.ts   stars-tags 에 topics / llm 실행 + 채점
+├─ tag-experiment.ts   stars-tags 에 topics / llm / replay 실행 + 채점
+├─ holdout.ts          어노테이션 큐로 처음 보는 저장소 검증
+└─ write-tags.ts       production 태그를 stars.db 의 repo_tag 에 쓴다 (SPEC B11)
 labels.json            정답 원본 (커밋)
 ```
 

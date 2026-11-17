@@ -79,8 +79,8 @@ async function claudeChat(messages: ChatMessage[], schema: z.ZodType, model: str
     messages: turns,
     output_config: { effort: 'low', format: betaZodOutputFormat(schema) },
     // 안전 분류기가 거절하면 서버가 대체 모델로 다시 돌린다. 공개 저장소 메타데이터라 드물다.
-    betas: ['server-side-fallback-2026-07-01'],
-    fallbacks: 'default',
+    // Haiku 에는 서버 쪽 대체가 없어 보내지 않는다.
+    ...(model.startsWith('claude-haiku') ? {} : { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' as const }),
   })
 
   if (response.stop_reason === 'refusal') {

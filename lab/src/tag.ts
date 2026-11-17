@@ -1,7 +1,7 @@
 import { startActiveObservation } from '@langfuse/tracing'
 import { z } from 'zod'
 import { generate } from './generate.ts'
-import { TAG_PROMPT } from './prompt.ts'
+import { TAG_PROMPT, type PromptRef } from './prompt.ts'
 import type { RepoInput } from './repos.ts'
 
 /** 태그 예측. primary 가 null 이면 대표 태그를 고르지 않은 것(토픽 기준선). */
@@ -33,10 +33,10 @@ export async function tag(repo: RepoInput, metadata: Record<string, unknown> = {
 }
 
 /** tag 와 같고, 사람 평가(어노테이션 큐)에 넣을 트레이스 id 도 돌려준다. */
-export function tagTraced(repo: RepoInput, metadata: Record<string, unknown> = {}): Promise<{ result: Tagging; traceId: string }> {
+export function tagTraced(repo: RepoInput, metadata: Record<string, unknown> = {}): Promise<{ result: Tagging; traceId: string; prompt: PromptRef | null }> {
   return startActiveObservation('tag-repo', async (span) => {
     span.update({ input: repo, metadata })
-    const content = await generate(
+    const { content, prompt } = await generate(
       'llm',
       TAG_PROMPT,
       { repo: JSON.stringify(repo) },
@@ -44,6 +44,6 @@ export function tagTraced(repo: RepoInput, metadata: Record<string, unknown> = {
     )
     const result = parseTagging(content)
     span.update({ output: result })
-    return { result, traceId: span.traceId }
+    return { result, traceId: span.traceId, prompt }
   })
 }
