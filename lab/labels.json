@@ -1,0 +1,1084 @@
+[
+  {
+    "repo": "lucaong/minisearch",
+    "stratum": "keyword-single",
+    "primary": "search",
+    "categories": ["search", "fuzzy-search"],
+    "note": "",
+    "context": {
+      "description": "Tiny and powerful JavaScript full-text search engine for browser and Node",
+      "topics": [
+        "autocomplete",
+        "autosuggestion",
+        "edge-computing",
+        "fulltext-search",
+        "fuzzy-search",
+        "javascript",
+        "search",
+        "search-engine",
+        "text-search",
+        "typo-tolerance"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "liriliri/eruda",
+    "stratum": "keyword-single",
+    "primary": "debugger",
+    "categories": ["console", "debugger", "developer-tools", "mobile"],
+    "note": "",
+    "context": {
+      "description": "Console for mobile browsers",
+      "topics": [
+        "console",
+        "debugger",
+        "developer-tools",
+        "eruda",
+        "mobile"
+      ],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "evhub/coconut",
+    "stratum": "keyword-single",
+    "primary": "language",
+    "categories": ["functional", "language"],
+    "note": "",
+    "context": {
+      "description": "Simple, elegant, Pythonic functional programming.",
+      "topics": [
+        "coconut",
+        "compiler",
+        "functional",
+        "functional-language",
+        "functional-programming",
+        "language",
+        "programming-language",
+        "python",
+        "xonsh",
+        "xontrib"
+      ],
+      "language": "Python"
+    }
+  },
+  {
+    "repo": "m90/seeThru",
+    "stratum": "keyword-single",
+    "primary": "alpha-channel",
+    "categories": ["alpha-channel", "canvas"],
+    "note": "",
+    "context": {
+      "description": "HTML5 video with alpha channel transparencies",
+      "topics": [
+        "alpha-channel",
+        "canvas-element",
+        "hacktoberfest",
+        "html5-video"
+      ],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "momocow/webpack-userscript",
+    "stratum": "keyword-single",
+    "primary": "webpack",
+    "categories": ["webpack", "plugin"],
+    "note": "",
+    "context": {
+      "description": "A Webpack plugin for userscript projects. 🙈",
+      "topics": [],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "fathyb/html2svg",
+    "stratum": "keyword-single",
+    "primary": "svg",
+    "categories": ["svg"],
+    "note": "",
+    "context": {
+      "description": "Convert HTML and `<canvas>` to SVG, PDF, or images using Chromium",
+      "topics": [],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "pmndrs/use-gesture",
+    "stratum": "keyword-single",
+    "primary": "gestures",
+    "categories": ["drag", "gestures", "hooks", "pinch", "zoom"],
+    "note": "",
+    "context": {
+      "description": "👇Bread n butter utility for component-tied mouse/touch gestures in React and Vanilla Javascript.",
+      "topics": [
+        "drag",
+        "gestures",
+        "hooks",
+        "pinch",
+        "react",
+        "scroll",
+        "wheel",
+        "zoom"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "Rob--W/cors-anywhere",
+    "stratum": "keyword-single",
+    "primary": "cors",
+    "categories": ["cors"],
+    "note": "",
+    "context": {
+      "description": "CORS Anywhere is a NodeJS reverse proxy which adds CORS headers to the proxied request.",
+      "topics": [],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "leeoniya/uPlot",
+    "stratum": "keyword-single",
+    "primary": "chart",
+    "categories": ["chart"],
+    "note": "",
+    "context": {
+      "description": "📈 A small, fast chart for time series, lines, areas, ohlc & bars",
+      "topics": [
+        "analytics",
+        "chart",
+        "charts",
+        "data-visualization",
+        "graph",
+        "graphs",
+        "lightweight",
+        "line-chart",
+        "ohlc",
+        "performance",
+        "plot",
+        "plotting",
+        "streaming",
+        "time-series",
+        "timeseries",
+        "trend-analysis"
+      ],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "23/resumable.js",
+    "stratum": "keyword-single",
+    "primary": "file",
+    "categories": ["file"],
+    "note": "",
+    "context": {
+      "description": "A JavaScript library for providing multiple simultaneous, stable, fault-tolerant and resumable/restartable uploads via the HTML5 File API.",
+      "topics": [],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "cline/cline",
+    "stratum": "keyword-single",
+    "primary": "agent",
+    "categories": ["agent"],
+    "note": "",
+    "context": {
+      "description": "Autonomous coding agent as an SDK, IDE extension, or CLI assistant.",
+      "topics": [],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "reach/router",
+    "stratum": "keyword-single",
+    "primary": "router",
+    "categories": ["router", "react"],
+    "note": "",
+    "context": {
+      "description": null,
+      "topics": [],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "google/web-starter-kit",
+    "stratum": "keyword-single",
+    "primary": "boilerplate",
+    "categories": ["boilerplate"],
+    "note": "",
+    "context": {
+      "description": "Web Starter Kit - a workflow for multi-device websites",
+      "topics": [],
+      "language": "HTML"
+    }
+  },
+  {
+    "repo": "microsoft/FASTER",
+    "stratum": "keyword-single",
+    "primary": "indexing",
+    "categories": ["indexing"],
+    "note": "",
+    "context": {
+      "description": "Fast persistent recoverable log and key-value store + cache, in C# and C++.",
+      "topics": [
+        "concurrent",
+        "hash-table",
+        "indexing",
+        "key-value-store",
+        "library",
+        "logging",
+        "multi-threaded",
+        "persistent",
+        "recoverable"
+      ],
+      "language": "C#"
+    }
+  },
+  {
+    "repo": "mattpocock/evalite",
+    "stratum": "keyword-single",
+    "primary": "ai",
+    "categories": ["ai", "evals"],
+    "note": "",
+    "context": {
+      "description": "Evaluate your LLM-powered apps with TypeScript",
+      "topics": [
+        "ai",
+        "evals",
+        "typescript"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "KittyGiraudel/sass-guidelines",
+    "stratum": "keyword-single",
+    "primary": "sass",
+    "categories": ["sass", "styleguide"],
+    "note": "",
+    "context": {
+      "description": "Guidelines for writing sane, maintainable and scalable Sass.",
+      "topics": [
+        "css",
+        "guidelines",
+        "sass",
+        "styleguide"
+      ],
+      "language": "HTML"
+    }
+  },
+  {
+    "repo": "jcubic/wayne",
+    "stratum": "keyword-single",
+    "primary": "http-server",
+    "categories": ["http-server", "service-worker"],
+    "note": "",
+    "context": {
+      "description": "Wayne: Open Source Service Worker Routing library for in browser HTTP requests",
+      "topics": [
+        "browser",
+        "fake",
+        "filesystem",
+        "filesystem-library",
+        "http",
+        "http-server",
+        "http-server-library",
+        "javascript",
+        "promise",
+        "routing",
+        "service-worker",
+        "wayne",
+        "web-server"
+      ],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "brunnolou/react-morph",
+    "stratum": "keyword-single",
+    "primary": "morph",
+    "categories": ["morph", "transitions"],
+    "note": "",
+    "context": {
+      "description": "Morphing Ui transitions made simple",
+      "topics": [],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "AsyncBanana/microdiff",
+    "stratum": "keyword-single",
+    "primary": "diff",
+    "categories": ["diff"],
+    "note": "",
+    "context": {
+      "description": "A fast, zero dependency object and array comparison library. Significantly faster than most other deep comparison libraries and has full TypeScript support.",
+      "topics": [
+        "collaborate",
+        "comparison",
+        "deno",
+        "diff",
+        "github",
+        "javascript",
+        "typescript"
+      ],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "jaggad/crunker",
+    "stratum": "keyword-single",
+    "primary": "audio",
+    "categories": ["audio"],
+    "note": "",
+    "context": {
+      "description": "Simple way to merge or concatenate audio files with the Web Audio API. ",
+      "topics": [
+        "audiobuffer",
+        "concatenate",
+        "es2015",
+        "es6",
+        "javascript",
+        "webaudio-api"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "pheralb/svgl",
+    "stratum": "keyword-multi",
+    "primary": "logo",
+    "categories": ["logo", "svg"],
+    "note": "",
+    "context": {
+      "description": "🧩 A beautiful library with SVG logos. Built with Sveltekit & Tailwind CSS.",
+      "topics": [
+        "hacktoberfest",
+        "logos",
+        "open-source",
+        "optimized",
+        "svelte",
+        "sveltekit",
+        "svg",
+        "svg-icons",
+        "svg-images",
+        "tailwindcss"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "unlayer/react-email-editor",
+    "stratum": "keyword-multi",
+    "primary": "editor",
+    "categories": ["email", "editor", "builder"],
+    "note": "",
+    "context": {
+      "description": "Drag-n-Drop Email Editor Component for React.js",
+      "topics": [
+        "ai-assistant",
+        "ai-email",
+        "ai-email-assistant",
+        "ai-email-builder",
+        "ai-email-editor",
+        "ai-email-generator",
+        "ai-email-template-editor",
+        "ai-tools",
+        "builder",
+        "drag-and-drop",
+        "email",
+        "email-builder",
+        "email-editor",
+        "email-marketing",
+        "email-template",
+        "html-email",
+        "html-emails",
+        "react-component",
+        "template"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "orval-labs/orval",
+    "stratum": "keyword-multi",
+    "primary": "swagger",
+    "categories": ["swagger", "codegen", "openapi"],
+    "note": "",
+    "context": {
+      "description": "orval is able to generate client with appropriate type-signatures (TypeScript) from any valid OpenAPI v3 or Swagger v2 specification, either in yaml or json formats. 🍺",
+      "topics": [
+        "angular",
+        "axios-client",
+        "codegen",
+        "faker",
+        "mock",
+        "msw",
+        "openapi-specification",
+        "orval",
+        "react",
+        "react-query",
+        "swagger",
+        "typescript"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "BetterTyped/react-zoom-pan-pinch",
+    "stratum": "keyword-multi",
+    "primary": "gesture",
+    "categories": ["gesture", "pan", "pinch", "zoom", "zoomin", "zoomout"],
+    "note": "",
+    "context": {
+      "description": "🖼 React library to support easy zoom, pan, pinch on various html dom elements like <img> and <div>",
+      "topics": [
+        "figma",
+        "gesture",
+        "html-manipulation",
+        "miro",
+        "pan",
+        "pinch",
+        "react",
+        "react-component",
+        "svg",
+        "zoom",
+        "zoomin",
+        "zoomout"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "eirslett/frontend-maven-plugin",
+    "stratum": "keyword-multi",
+    "primary": "plugin",
+    "categories": ["plugin", "maven"],
+    "note": "",
+    "context": {
+      "description": "\"Maven-node-grunt-gulp-npm-node-plugin to end all maven-node-grunt-gulp-npm-plugins.\" A Maven plugin that downloads/installs Node and NPM locally, runs NPM install, Grunt, Gulp and/or Karma.",
+      "topics": [],
+      "language": "Java"
+    }
+  },
+  {
+    "repo": "i18next/react-i18next",
+    "stratum": "keyword-multi",
+    "primary": "i18n",
+    "categories": ["i18n"],
+    "note": "",
+    "context": {
+      "description": "Internationalization for react done right. Using the i18next i18n ecosystem.",
+      "topics": [
+        "i18n",
+        "i18next",
+        "internationalization",
+        "react",
+        "react-native",
+        "ssr",
+        "translation"
+      ],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "mitmproxy/mitmproxy",
+    "stratum": "keyword-multi",
+    "primary": "proxy",
+    "categories": ["proxy"],
+    "note": "",
+    "context": {
+      "description": "An interactive TLS-capable intercepting HTTP proxy for penetration testers and software developers.",
+      "topics": [
+        "debugging",
+        "http",
+        "http2",
+        "man-in-the-middle",
+        "mitmproxy",
+        "proxy",
+        "python",
+        "security",
+        "ssl",
+        "tls",
+        "websocket"
+      ],
+      "language": "Python"
+    }
+  },
+  {
+    "repo": "electron/electron",
+    "stratum": "keyword-multi",
+    "primary": "electron",
+    "categories": ["electron", "chrome"],
+    "note": "",
+    "context": {
+      "description": ":electron: Build cross-platform desktop apps with JavaScript, HTML, and CSS",
+      "topics": [
+        "c-plus-plus",
+        "chrome",
+        "css",
+        "electron",
+        "html",
+        "javascript",
+        "nodejs",
+        "v8",
+        "works-with-codespaces"
+      ],
+      "language": "C++"
+    }
+  },
+  {
+    "repo": "redwoodjs/sdk",
+    "stratum": "keyword-multi",
+    "primary": "redwood",
+    "categories": ["react", "sdk", "cloudflare"],
+    "note": "",
+    "context": {
+      "description": "A simple framework for humans Server-first React, running on the Cloudflare platform. Simple to build. Easy to maintain.",
+      "topics": [
+        "cloudflare",
+        "react",
+        "react-server-components",
+        "realtime",
+        "typescript"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "vuejs/vue-test-utils",
+    "stratum": "keyword-multi",
+    "primary": "test",
+    "categories": ["test", "vue"],
+    "note": "",
+    "context": {
+      "description": "Component Test Utils for Vue 2",
+      "topics": [],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "ben-rogerson/twin.macro",
+    "stratum": "keyword-multi",
+    "primary": "tailwind",
+    "categories": ["tailwind"],
+    "note": "",
+    "context": {
+      "description": "🦹‍♂️ Twin blends the magic of Tailwind with the flexibility of css-in-js (emotion, styled-components, solid-styled-components, stitches and goober) at build time.",
+      "topics": [
+        "babel",
+        "babel-macro",
+        "css-in-js",
+        "emotion",
+        "emotionjs",
+        "goober",
+        "react",
+        "reactjs",
+        "solidjs",
+        "stitches",
+        "styled-components",
+        "styling-css-in-js",
+        "styling-react",
+        "tailwind",
+        "tailwind-css",
+        "tailwind-in-js",
+        "tailwindcss",
+        "twin"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "NorthwoodsSoftware/GoJS",
+    "stratum": "keyword-multi",
+    "primary": "diagrams",
+    "categories": ["diagrams"],
+    "note": "",
+    "context": {
+      "description": "JavaScript diagramming library for interactive flowcharts, org charts, design tools, planning tools, visual languages.",
+      "topics": [
+        "canvas",
+        "chart",
+        "charts",
+        "data-visualization",
+        "diagram",
+        "es6",
+        "es6-modules",
+        "flowchart",
+        "gojs",
+        "graph",
+        "html",
+        "interactive-diagrams",
+        "javascript",
+        "javascript-library",
+        "layout",
+        "orgchart",
+        "svg",
+        "typescript",
+        "typescript-library",
+        "visualization"
+      ],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "electron/forge",
+    "stratum": "keyword-multi",
+    "primary": "scaffold",
+    "categories": ["electron"],
+    "note": "",
+    "context": {
+      "description": ":electron: A complete tool for building and publishing Electron applications",
+      "topics": [
+        "build",
+        "electron",
+        "hacktoberfest",
+        "javascript",
+        "linux",
+        "macos",
+        "package",
+        "typescript",
+        "webpack",
+        "windows"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "microsoft/fast",
+    "stratum": "keyword-multi",
+    "primary": "ui",
+    "categories": ["web-components"],
+    "note": "",
+    "context": {
+      "description": "The adaptive interface system for modern web experiences.",
+      "topics": [
+        "adaptive-ui",
+        "animation-library",
+        "color-library",
+        "component-architecture",
+        "component-library",
+        "components",
+        "design-architecture",
+        "design-systems",
+        "development-tools",
+        "front-end-framework",
+        "react",
+        "typescript",
+        "web-accessibility",
+        "web-components",
+        "web-components-schemas",
+        "web-standards"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "NotionX/react-notion-x",
+    "stratum": "keyword-multi",
+    "primary": "notion",
+    "categories": ["notion"],
+    "note": "",
+    "context": {
+      "description": "Fast and accurate React renderer for Notion. TS batteries included. ⚡️",
+      "topics": [
+        "nextjs",
+        "notion",
+        "notion-api",
+        "react",
+        "react-notion",
+        "typescript"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "jolaleye/cssfx",
+    "stratum": "keyword-multi",
+    "primary": "animation",
+    "categories": ["animation", "css"],
+    "note": "",
+    "context": {
+      "description": "✨ Beautifully simple click-to-copy CSS effects",
+      "topics": [
+        "animation",
+        "css",
+        "design",
+        "svg",
+        "vue"
+      ],
+      "language": "Vue"
+    }
+  },
+  {
+    "repo": "mswjs/data",
+    "stratum": "keyword-multi",
+    "primary": "msw",
+    "categories": ["mocking", "testing", "msw"],
+    "note": "",
+    "context": {
+      "description": "Data querying library for testing JavaScript applications.",
+      "topics": [
+        "api",
+        "data-modeling",
+        "fixtures",
+        "mocking",
+        "orm",
+        "testing",
+        "testing-tool"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "inngest/typedwebhook.tools",
+    "stratum": "keyword-multi",
+    "primary": "webhook",
+    "categories": ["webhook"],
+    "note": "",
+    "context": {
+      "description": "A webhook testing tool for checking payloads, with automatic type generation",
+      "topics": [
+        "cloudflare-workers",
+        "svelte",
+        "sveltekit",
+        "typescript",
+        "typescript-definitions",
+        "webhook",
+        "webhook-server",
+        "webhooks-cat"
+      ],
+      "language": "Svelte"
+    }
+  },
+  {
+    "repo": "mswjs/msw",
+    "stratum": "keyword-multi",
+    "primary": "msw",
+    "categories": ["msw", "mock"],
+    "note": "",
+    "context": {
+      "description": "Industry standard API mocking for JavaScript.",
+      "topics": [
+        "api",
+        "api-mocking",
+        "devtools",
+        "mock",
+        "mock-service-worker",
+        "mocking",
+        "mocking-framework",
+        "mocking-library",
+        "msw",
+        "mswjs",
+        "service-worker"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "ConnorAtherton/loaders.css",
+    "stratum": "keyword-multi",
+    "primary": "loaders",
+    "categories": ["loaders", "css"],
+    "note": "",
+    "context": {
+      "description": "Delightful, performance-focused pure css loading animations.",
+      "topics": [],
+      "language": "CSS"
+    }
+  },
+  {
+    "repo": "lukeed/worktop",
+    "stratum": "keyword-none",
+    "primary": "framework",
+    "categories": ["framework", "cloudflare"],
+    "note": "",
+    "context": {
+      "description": "The next generation web framework for Cloudflare Workers",
+      "topics": [],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "bigskysoftware/_hyperscript",
+    "stratum": "keyword-none",
+    "primary": "hyperscript",
+    "categories": ["hyperscript", "htmx"],
+    "note": "",
+    "context": {
+      "description": "a small scripting language for the web",
+      "topics": [
+        "htmx",
+        "hyperscript",
+        "scripting-language"
+      ],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "fullstackopen-2019/fullstackopen-2019.github.io",
+    "stratum": "keyword-none",
+    "primary": "fullstack",
+    "categories": ["fullstack"],
+    "note": "",
+    "context": {
+      "description": null,
+      "topics": [],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "leafo/lapis",
+    "stratum": "keyword-none",
+    "primary": "lapis",
+    "categories": ["lapis", "lua"],
+    "note": "",
+    "context": {
+      "description": "A web framework for Lua and OpenResty written in MoonScript",
+      "topics": [
+        "lapis",
+        "lua",
+        "moonscript",
+        "openresty"
+      ],
+      "language": "MoonScript"
+    }
+  },
+  {
+    "repo": "coredevices/PebbleOS",
+    "stratum": "keyword-none",
+    "primary": "pebble",
+    "categories": ["pebble", "os"],
+    "note": "",
+    "context": {
+      "description": null,
+      "topics": [],
+      "language": "C"
+    }
+  },
+  {
+    "repo": "taoqf/node-html-parser",
+    "stratum": "keyword-none",
+    "primary": "parser",
+    "categories": ["parser", "html", "node"],
+    "note": "",
+    "context": {
+      "description": "A very fast HTML parser, generating a simplified DOM, with basic element query support.",
+      "topics": [],
+      "language": "HTML"
+    }
+  },
+  {
+    "repo": "gruntjs/grunt",
+    "stratum": "keyword-none",
+    "primary": "grunt",
+    "categories": ["grunt"],
+    "note": "",
+    "context": {
+      "description": "Grunt: The JavaScript Task Runner",
+      "topics": [
+        "hacktoberfest"
+      ],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "wallabyjs/quokka",
+    "stratum": "keyword-none",
+    "primary": "quokka",
+    "categories": ["quokka"],
+    "note": "",
+    "context": {
+      "description": " Repository for Quokka.js questions and issues",
+      "topics": [],
+      "language": null
+    }
+  },
+  {
+    "repo": "alchemy-run/alchemy",
+    "stratum": "keyword-none",
+    "primary": "alchemy",
+    "categories": ["alchemy", "effect" , "cloudflare"],
+    "note": "",
+    "context": {
+      "description": "Infrastructure as Effects",
+      "topics": [
+        "alchemy",
+        "cloud",
+        "effect",
+        "iac",
+        "typescript"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "catdad-experiments/libheif-js",
+    "stratum": "keyword-none",
+    "primary": "libheif",
+    "categories": ["libheif", "heic", "heif"],
+    "note": "",
+    "context": {
+      "description": "🤳 libheif as an npm module",
+      "topics": [
+        "emscripten",
+        "heic",
+        "heif",
+        "libheif",
+        "npm-module"
+      ],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "olivernn/lunr.js",
+    "stratum": "keyword-none",
+    "primary": "search",
+    "categories": ["lunr", "search"],
+    "note": "",
+    "context": {
+      "description": "A bit like Solr, but much smaller and not as bright",
+      "topics": [
+        "full-text-search",
+        "javascript",
+        "lunr",
+        "search"
+      ],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "remix-run/remix",
+    "stratum": "keyword-none",
+    "primary": "remix",
+    "categories": ["remix"],
+    "note": "",
+    "context": {
+      "description": "The fully-stacked web framework",
+      "topics": [
+        "remix",
+        "web",
+        "web-application",
+        "web-development"
+      ],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "zalmoxisus/redux-devtools-extension",
+    "stratum": "keyword-none",
+    "primary": "redux",
+    "categories": ["redux", "devtools"],
+    "note": "",
+    "context": {
+      "description": "Redux DevTools extension.",
+      "topics": [
+        "debug",
+        "devtools",
+        "extension",
+        "javascript",
+        "redux"
+      ],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "alshdavid-public/BorrowScript",
+    "stratum": "keyword-none",
+    "primary": "BorrowScript",
+    "categories": ["language"],
+    "note": "",
+    "context": {
+      "description": "TypeScript with a Borrow Checker. Multi-threaded, Tiny binaries. No GC. Easy to write.",
+      "topics": [],
+      "language": "HTML"
+    }
+  },
+  {
+    "repo": "shuding/better-all",
+    "stratum": "keyword-none",
+    "primary": "promise",
+    "categories": ["promise"],
+    "note": "",
+    "context": {
+      "description": "Better Promise.all with automatic dependency optimization",
+      "topics": [],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "mjackson/remix-the-web",
+    "stratum": "keyword-none",
+    "primary": "remix",
+    "categories": ["remix"],
+    "note": "",
+    "context": {
+      "description": "Open source tools for Remix (or any framework!)",
+      "topics": [],
+      "language": "TypeScript"
+    }
+  },
+  {
+    "repo": "esm-dev/esm.sh",
+    "stratum": "keyword-none",
+    "primary": "esm",
+    "categories": ["esm"],
+    "note": "",
+    "context": {
+      "description": "A no-build JavaScript CDN for modern web development.",
+      "topics": [
+        "cdn",
+        "esm",
+        "nobuild",
+        "web-development"
+      ],
+      "language": "Go"
+    }
+  },
+  {
+    "repo": "michalsnik/aos",
+    "stratum": "keyword-none",
+    "primary": "scroll",
+    "categories": ["scroll", "animation"],
+    "note": "",
+    "context": {
+      "description": "Animate on scroll library",
+      "topics": [],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "tscanlin/tocbot",
+    "stratum": "keyword-none",
+    "primary": "toc",
+    "categories": ["toc", "html"],
+    "note": "",
+    "context": {
+      "description": "Build a table of contents from headings in an HTML document.",
+      "topics": [
+        "html-document",
+        "toc"
+      ],
+      "language": "JavaScript"
+    }
+  },
+  {
+    "repo": "vercel/release",
+    "stratum": "keyword-none",
+    "primary": "releases",
+    "categories": ["releases", "npm"],
+    "note": "",
+    "context": {
+      "description": "Generate changelogs with a single command",
+      "topics": [
+        "github",
+        "npm",
+        "releases",
+        "vercel"
+      ],
+      "language": "JavaScript"
+    }
+  }
+]

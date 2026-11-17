@@ -7,3 +7,6 @@ fixture.json
 
 # 토큰이 섞일 수 있는 API 덤프
 *.raw.json
+
+# lab/ 의 Langfuse·LLM 키
+.env

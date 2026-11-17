@@ -295,6 +295,37 @@ node src/cli.ts test.db --from fixture.json
 sqlite3 stars.db "SELECT name FROM sqlite_master WHERE type IN ('view','table')"
 ```
 
+## B10. LLM 분류를 실험한다 (분석용)
+
+**상황** — 키워드 분류가 얼마나 틀리는지, LLM 이 그보다 나은지 숫자로 알고 싶다.
+「분류를 왜 안 만들었나」의 마지막 이유 — 틀린 걸 알아챌 방법이 없었다 — 를 메우는 도구다.
+**화면은 바뀌지 않는다.** 결과는 [Langfuse](https://langfuse.com) 에만 남고 `stars.db` 에 쓰지 않는다.
+
+**동작** — `lab/` 에서 한다. 자세한 절차는 [lab/README.md](./lab/README.md).
+
+```bash
+cd lab
+node src/sample.ts ../stars.db            # 층별 표본을 labels.json 에 더한다
+# labels.json 의 primary / categories 를 사람이 채운다
+node --env-file=.env src/push-prompt.ts --prompt classify  # 프롬프트 v1 을 Langfuse 로
+node --env-file=.env src/sync-dataset.ts ../stars.db      # 정답 → 데이터셋
+node --env-file=.env src/experiment.ts ../stars.db --task keyword
+node --env-file=.env src/experiment.ts ../stars.db --task llm --name llm-v1
+```
+
+**확인**
+
+- 정답의 원본은 커밋되는 `labels.json` 이다. Langfuse 데이터셋은 사본이라 다시 올려도 같은 항목을 덮어쓴다
+- 같은 데이터셋에 돌린 실행끼리 `primary_accuracy` · `category_f1_mean` · `miss_rate` 로 비교된다. `miss_rate` 는 정답엔 도메인이 있는데 `none` 이라 답한 비율 — 키워드의 "보이지 않는 누락"이다
+- 키가 없어도 `node src/run.ts ../stars.db` 는 돈다(`LLM_BASE_URL` 기본값 `fake`, 트레이스 꺼짐). 데이터셋·실험·프롬프트 업로드는 키가 없으면 바로 멈춘다
+- `core` 의 런타임 의존성은 그대로 0 이다. Langfuse · OpenTelemetry 는 `lab/` 에만 있다
+
+**정답을 붙여 보니** (2026-11-17, 60건) — 10개 도메인으로 붙이라고 했는데 실제로 붙은 건 자유 태그 약 57가지였다
+(`search`, `svg`, `cors`, `msw` …). 사람이 별표를 떠올리는 단위가 10칸보다 훨씬 잘다는 뜻이고,
+「분류를 왜 안 만들었나」의 판단을 뒷받침한다. 그래서 같은 `labels.json` 을 태그 정답으로 읽는
+태그 실험(`stars-tags`, LLM-as-a-judge 채점)을 더했다 — [lab/README.md](./lab/README.md#태그-실험-stars-tags).
+처음 보는 저장소 24건을 사람이 매겨 보니 태그 프롬프트 v3 의 출력은 92% 가 "좋음"이었다.
+
 ---
 
 # 성능 기준
